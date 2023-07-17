@@ -28,4 +28,5 @@ private:
 private:
 	TSharedPtr<class FUICommandList> BakeSGLightingCommands;
 	TSharedPtr<class FUICommandList> CleanGLightingCommands;
+	
 };

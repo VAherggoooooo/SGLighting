@@ -5,8 +5,10 @@
 #include "SGLightingCommands.h"
 #include "LevelEditorActions.h"
 #include "GameFramework/WorldSettings.h"
+#include "SGLighting/System/Mesh/Public/MeshCollecter.h"
 #include "Misc/MessageDialog.h"
 #include "ToolMenus.h"
+#include "SGLighting/System/Mesh/Public/LevelManager.h"
 
 static const FName SGLightingTabName("SGLighting");
 
@@ -59,7 +61,12 @@ void FSGLightingModule::BakeSGLighting_Clicked()
 	// 						FText::FromString(TEXT("SGLighting.cpp"))
 	// 				   );
 	// FMessageDialog::Open(EAppMsgType::Ok, DialogText);
-	FLevelEditorActionCallbacks::BuildLightingOnly_Execute();
+
+	
+	//FLevelEditorActionCallbacks::BuildLightingOnly_Execute();
+	ULevelManager* LevelManager = NewObject<ULevelManager>();
+	LevelManager->GetMeshCollector()->GetAllStaticMeshActors(true);
+	LevelManager = nullptr;
 }
 
 void FSGLightingModule::CleanSGLighting_Clicked()
