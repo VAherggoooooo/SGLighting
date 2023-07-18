@@ -6,7 +6,10 @@ public class SGLighting : ModuleRules
 {
 	public SGLighting(ReadOnlyTargetRules Target) : base(Target)
 	{
+		DefaultBuildSettings = BuildSettingsVersion.V2;
 		PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
+		ShadowVariableWarningLevel = WarningLevel.Error;
+		bLegacyPublicIncludePaths = false;
 		
 		PublicIncludePaths.AddRange(
 			new string[] {
@@ -26,6 +29,8 @@ public class SGLighting : ModuleRules
 			new string[]
 			{
 				"Core",
+				"RenderCore",
+				"Projects",
 				// ... add other public dependencies that you statically link with here ...
 			}
 			);
@@ -35,6 +40,7 @@ public class SGLighting : ModuleRules
 			new string[]
 			{
 				"Projects",
+				"CoreUObject",
 				"InputCore",
 				"EditorFramework",
 				"UnrealEd",

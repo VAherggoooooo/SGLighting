@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "BVHData.h"
 #include "MeshCollecter.h"
 #include "LevelManager.generated.h"
 
@@ -14,6 +15,8 @@ public:
 	~ULevelManager();
 
 	virtual UMeshCollecter* GetMeshCollector() const { return MeshCollecter == nullptr? nullptr:MeshCollecter; } 
+	virtual UBVHData* GetBVHData() const { return BVHData == nullptr? nullptr:BVHData; } 
 private:
 	UMeshCollecter* MeshCollecter;
+	UBVHData* BVHData;
 };

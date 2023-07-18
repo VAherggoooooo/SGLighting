@@ -8,14 +8,26 @@
 #include "SGLighting/System/Mesh/Public/MeshCollecter.h"
 #include "Misc/MessageDialog.h"
 #include "ToolMenus.h"
+#include "Interfaces/IPluginManager.h"
 #include "SGLighting/System/Mesh/Public/LevelManager.h"
 
+//FString FSGLightingModule::Name = FString(TEXT("FSGLightingModule"));
 static const FName SGLightingTabName("SGLighting");
 
 #define LOCTEXT_NAMESPACE "FSGLightingModule"
 
 void FSGLightingModule::StartupModule()
 {
+	// // Fetch the absolute path to the plugins root directory.
+	// FString PluginBaseDirectory = IPluginManager::Get().FindPlugin(FSGLightingModule::Name)->GetBaseDir();
+	// // Append the local shader directory.
+	// FString ShaderDirectory = FPaths::Combine(PluginBaseDirectory, TEXT("Shaders"));
+	// // Construct the virtual path shorthand.
+	// FString VirtualShaderDirectory = FString::Printf(TEXT("/Plugin/%s"), *FSGLightingModule::Name);
+	// // Create a mapping to the virtual shader directory shorthand.
+	// AddShaderSourceDirectoryMapping(VirtualShaderDirectory, ShaderDirectory);
+	//
+	//
 	// This code will execute after your module is loaded into memory; the exact timing is specified in the .uplugin file per-module
 	FSGLightingStyle::Initialize();
 	FSGLightingStyle::ReloadTextures();
@@ -65,7 +77,7 @@ void FSGLightingModule::BakeSGLighting_Clicked()
 	
 	//FLevelEditorActionCallbacks::BuildLightingOnly_Execute();
 	ULevelManager* LevelManager = NewObject<ULevelManager>();
-	LevelManager->GetMeshCollector()->GetAllStaticMeshActors(true);
+	LevelManager->GetBVHData()->GetTrangleNum(true, true, true);
 	LevelManager = nullptr;
 }
 

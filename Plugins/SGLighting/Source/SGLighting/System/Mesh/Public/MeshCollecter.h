@@ -17,6 +17,9 @@ class SGLIGHTING_API UMeshCollecter : public UObject
 public:
 	UMeshCollecter();
 	~UMeshCollecter(){}
+	void Init();
 	virtual TArray<AActor*> GetAllActors(bool bPrintName = false);
-	virtual TArray<AStaticMeshActor*> GetAllStaticMeshActors(bool bPrintName = false);
+	virtual TArray<AActor*> GetAllStaticMeshActors(bool bPrintName = false);
+	virtual TArray<UStaticMeshComponent*> GetAllStaticMeshComponents(bool bPrintName = false, bool bStatic = false);
+	virtual TArray<UStaticMesh*> GetAllStaticMeshesInLevel(bool bPrintName = false, bool bStatic = true);
 };

@@ -23,7 +23,7 @@ public:
 private:
 
 	void RegisterMenus();
-
+	//static FString Name;
 
 private:
 	TSharedPtr<class FUICommandList> BakeSGLightingCommands;

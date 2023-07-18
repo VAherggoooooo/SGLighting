@@ -5,10 +5,15 @@
 
 ULevelManager::ULevelManager()
 {
-	MeshCollecter = NewObject<UMeshCollecter>();
+	this->MeshCollecter = NewObject<UMeshCollecter>();
+	this->BVHData = NewObject<UBVHData>();
+
+	this->MeshCollecter->Init();
+	this->BVHData->Init(this->MeshCollecter);
 }
 
 ULevelManager::~ULevelManager()
 {
-	MeshCollecter = nullptr;
+	this->MeshCollecter = nullptr;
+	this->BVHData = nullptr;
 }
