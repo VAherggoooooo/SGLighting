@@ -77,7 +77,7 @@ void FSGLightingModule::BakeSGLighting_Clicked()
 	
 	//FLevelEditorActionCallbacks::BuildLightingOnly_Execute();
 	ULevelManager* LevelManager = NewObject<ULevelManager>();
-	LevelManager->GetBVHData()->GetTrangleNum(true, true, true);
+	LevelManager->GetBVHData()->GetSceneData();
 	LevelManager = nullptr;
 }
 

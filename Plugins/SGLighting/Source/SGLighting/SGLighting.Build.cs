@@ -50,6 +50,7 @@ public class SGLighting : ModuleRules
 				"Slate",
 				"SlateCore",
 				"LevelEditor",
+				"ProceduralMeshComponent",
 				// ... add private dependencies that you statically link with here ...	
 			}
 			);
