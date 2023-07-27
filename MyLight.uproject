@@ -17,6 +17,14 @@
 			"TargetAllowList": [
 				"Editor"
 			]
+		},
+		{
+			"Name": "LensDistortion",
+			"Enabled": true
+		},
+		{
+			"Name": "CameraCalibration",
+			"Enabled": true
 		}
 	]
 }

@@ -18,17 +18,6 @@ static const FName SGLightingTabName("SGLighting");
 
 void FSGLightingModule::StartupModule()
 {
-	// // Fetch the absolute path to the plugins root directory.
-	// FString PluginBaseDirectory = IPluginManager::Get().FindPlugin(FSGLightingModule::Name)->GetBaseDir();
-	// // Append the local shader directory.
-	// FString ShaderDirectory = FPaths::Combine(PluginBaseDirectory, TEXT("Shaders"));
-	// // Construct the virtual path shorthand.
-	// FString VirtualShaderDirectory = FString::Printf(TEXT("/Plugin/%s"), *FSGLightingModule::Name);
-	// // Create a mapping to the virtual shader directory shorthand.
-	// AddShaderSourceDirectoryMapping(VirtualShaderDirectory, ShaderDirectory);
-	//
-	//
-	// This code will execute after your module is loaded into memory; the exact timing is specified in the .uplugin file per-module
 	FSGLightingStyle::Initialize();
 	FSGLightingStyle::ReloadTextures();
 
@@ -48,6 +37,10 @@ void FSGLightingModule::StartupModule()
 		FCanExecuteAction());
 
 	UToolMenus::RegisterStartupCallback(FSimpleMulticastDelegate::FDelegate::CreateRaw(this, &FSGLightingModule::RegisterMenus));
+
+	//路径映射
+	FString PluginShaderDir = FPaths::Combine(IPluginManager::Get().FindPlugin(TEXT("SGLighting"))->GetBaseDir(), TEXT("Shaders"));
+	AddShaderSourceDirectoryMapping(TEXT("/Plugins/SGLighting"), PluginShaderDir);
 }
 
 void FSGLightingModule::ShutdownModule()

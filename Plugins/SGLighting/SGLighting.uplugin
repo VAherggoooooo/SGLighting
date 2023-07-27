@@ -10,15 +10,15 @@
 	"DocsURL": "",
 	"MarketplaceURL": "",
 	"SupportURL": "",
-	"CanContainContent": false,
+	"CanContainContent": true,
 	"IsBetaVersion": false,
 	"IsExperimentalVersion": false,
 	"Installed": false,
 	"Modules": [
 		{
 			"Name": "SGLighting",
-			"Type": "Editor",
-			"LoadingPhase": "Default"
+			"Type": "Runtime",
+			"LoadingPhase": "PostConfigInit"
 		}
 	]
 }
