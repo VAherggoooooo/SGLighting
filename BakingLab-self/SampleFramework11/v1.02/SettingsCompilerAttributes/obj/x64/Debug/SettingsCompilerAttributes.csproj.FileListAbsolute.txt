@@ -1,0 +1,12 @@
+F:\BakingLab-master\SampleFramework11\v1.02\SettingsCompilerAttributes\bin\x64\Debug\SettingsCompilerAttributes.dll
+F:\BakingLab-master\SampleFramework11\v1.02\SettingsCompilerAttributes\bin\x64\Debug\SettingsCompilerAttributes.pdb
+F:\BakingLab-master\SampleFramework11\v1.02\SettingsCompilerAttributes\obj\x64\Debug\SettingsCompilerAttributes.csproj.CoreCompileInputs.cache
+F:\BakingLab-master\SampleFramework11\v1.02\SettingsCompilerAttributes\obj\x64\Debug\SettingsCompilerAttributes.dll
+F:\BakingLab-master\SampleFramework11\v1.02\SettingsCompilerAttributes\obj\x64\Debug\SettingsCompilerAttributes.pdb
+F:\BakingLab-master\SampleFramework11\v1.02\SettingsCompilerAttributes\obj\x64\Debug\SettingsCompilerAttributes.csprojAssemblyReference.cache
+F:\BakingLab-self\SampleFramework11\v1.02\SettingsCompilerAttributes\bin\x64\Debug\SettingsCompilerAttributes.dll
+F:\BakingLab-self\SampleFramework11\v1.02\SettingsCompilerAttributes\bin\x64\Debug\SettingsCompilerAttributes.pdb
+F:\BakingLab-self\SampleFramework11\v1.02\SettingsCompilerAttributes\obj\x64\Debug\SettingsCompilerAttributes.csproj.AssemblyReference.cache
+F:\BakingLab-self\SampleFramework11\v1.02\SettingsCompilerAttributes\obj\x64\Debug\SettingsCompilerAttributes.csproj.CoreCompileInputs.cache
+F:\BakingLab-self\SampleFramework11\v1.02\SettingsCompilerAttributes\obj\x64\Debug\SettingsCompilerAttributes.dll
+F:\BakingLab-self\SampleFramework11\v1.02\SettingsCompilerAttributes\obj\x64\Debug\SettingsCompilerAttributes.pdb

@@ -78,7 +78,8 @@ void FSGLightingModule::CleanSGLighting_Clicked()
 {
 	UWorld* World = GWorld;
 	World->GetWorldSettings()->bForceNoPrecomputedLighting = true;
-	BakeSGLighting_Clicked();
+	FLevelEditorActionCallbacks::BuildLightingOnly_Execute();
+	//BakeSGLighting_Clicked();
 	World->GetWorldSettings()->bForceNoPrecomputedLighting = false;
 }
 

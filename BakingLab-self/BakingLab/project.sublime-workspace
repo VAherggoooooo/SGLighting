@@ -1,0 +1,237 @@
+{
+	"auto_complete":
+	{
+		"selected_items":
+		[
+		]
+	},
+	"buffers":
+	[
+	],
+	"build_system": "",
+	"build_system_choices":
+	[
+	],
+	"build_varint": "",
+	"command_palette":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"console":
+	{
+		"height": 0.0,
+		"history":
+		[
+		]
+	},
+	"distraction_free":
+	{
+		"menu_visible": true,
+		"show_minimap": false,
+		"show_open_files": false,
+		"show_tabs": false,
+		"side_bar_visible": false,
+		"status_bar_visible": false
+	},
+	"expanded_folders":
+	[
+	],
+	"file_history":
+	[
+		"/E/UE_Project/TGame/Saved/Crashes/UE4CC-Windows-FD1C8E6C4B24FA8FCFC4728449F6321C_0000/Game.log",
+		"/E/UE_Project/SeaSunPro_2/Saved/Crashes/UE4CC-Windows-6A0064094FBE8A1F826342B6AC0E85F4_0000/SeaSunPro_2.log",
+		"/E/UE_Project/TGame/Saved/Crashes/UE4CC-Windows-11A6F3494F04CCFF8EED1E8C6B75D9A1_0000/Game.log",
+		"/E/UE_Project/SeaSunPro_2/Saved/Crashes/UE4CC-Windows-6BC7F1E748B53460BFEA1386AE78AC71_0000/SeaSunPro_2.log",
+		"/E/UE_Project/TGame/Saved/Crashes/UE4CC-Windows-CA4AB2A247123990AC7ADABC091C697D_0000/Game.log",
+		"/E/UE_Project/TGame/Saved/Crashes/UE4CC-Windows-A480CAEF4811FF2C831AD98E520ED8D2_0000/Game.log",
+		"/E/UE_Project/SeaSunPro_2/Saved/Crashes/UE4CC-Windows-B248F12A431F4966784D42B7B844DBFC_0000/SeaSunPro_2.log",
+		"/E/UE_Project/SeaSunPro_2/Saved/Crashes/UE4CC-Windows-592ECBAC469D15442019E98281012574_0000/SeaSunPro_2.log",
+		"/E/UE_Project/SeaSunPro_2/Saved/Crashes/UE4CC-Windows-59766EE3497AC33843D78CBFA5A0291E_0000/SeaSunPro_2.log",
+		"/E/UE_Project/SeaSunPro_2/Saved/Crashes/UE4CC-Windows-CF098E4546730D50088139A87EFB074E_0000/SeaSunPro_2.log",
+		"/E/UE_Project/SeaSunPro_2/Saved/Crashes/UE4CC-Windows-E85E40A044F7E564213622AEC9A26AB2_0000/SeaSunPro_2.log",
+		"/E/UE_Project/SeaSunPro_2/Saved/Crashes/UE4CC-Windows-F17971BD46481612238617B10562AE73_0000/SeaSunPro_2.log",
+		"/E/UE_Project/SeaSunPro_2/Saved/Crashes/UE4CC-Windows-841CE7EF43F64ABEF10659AAEA47EED2_0000/SeaSunPro_2.log",
+		"/E/UE_Project/SeaSunPro_2/Saved/Crashes/UE4CC-Windows-28114AFB4DF6CABA6B5F529B3C655670_0000/SeaSunPro_2.log",
+		"/E/UE_Project/SeaSunPro_2/Saved/Crashes/UE4CC-Windows-7EAD80C94A31BEE5E1F353ABB1E698CF_0000/SeaSunPro_2.log",
+		"/E/UE_Project/SeaSunPro_2/Saved/Crashes/UE4CC-Windows-74DB91354F4752BFE9C8EA8478D57769_0000/SeaSunPro_2.log",
+		"/E/UE_Project/SeaSunPro_2/Saved/Crashes/UE4CC-Windows-FA126D1741A5B525C03D38B869C51DF4_0000/SeaSunPro_2.log",
+		"/E/UE_Project/SeaSunPro_2/Saved/Crashes/UE4CC-Windows-48EDFC214E56C6276BA78B8CB8918683_0000/SeaSunPro_2.log",
+		"/E/UE_Project/SeaSunPro_2/Saved/Crashes/UE4CC-Windows-34C8E9874D301117A74429A6A8A03CAE_0000/SeaSunPro_2.log",
+		"/C/Users/leifuyu/Desktop/maya1/Atom/girl004_face02_lod0/outputrecorder.txt",
+		"/C/Users/leifuyu/Downloads/普林斯顿微积分读本中英文PDF/密码链接说明.txt",
+		"/C/Users/leifuyu/AppData/Roaming/Unreal Engine/AutomationTool/Logs/E+UE_TTGame/UBT-SeaSun_pro1-Android-Development.txt",
+		"/F/temp/Test/Saved/Crashes/UE4CC-Windows-B4BE0C754BA8B736E66DF2AC555B4CE1_0000/PackageTest.log",
+		"/F/temp/Test/Saved/Crashes/UE4CC-Windows-99C38B124E02C441AA554990A63B58AD_0000/PackageTest.log",
+		"/F/temp/Test/Saved/Crashes/UE4CC-Windows-89CFF18A437345F62F7C6BBBD89F1875_0000/PackageTest.log",
+		"/F/temp/Test/Saved/Crashes/UE4CC-Windows-857DE1B24FF8F394271A5BA6E34F12A0_0000/PackageTest.log",
+		"/E/UE_Project/TGame/Saved/Crashes/UE4CC-Windows-E49B25AF44C119813EAE07B772A44965_0000/Game.log",
+		"/E/UE_Project/SeaSunPro_2/SeaSunPro_2.sln",
+		"/F/fps.txt",
+		"/F/FBXTool/head_2.fbx",
+		"/F/FBXTool/head_1.fbx",
+		"/C/Users/leifuyu/Downloads/girl013_ui_jilu01_face.fbx",
+		"/C/Users/leifuyu/Downloads/girl013_face01_skm_face.fbx",
+		"/C/Users/leifuyu/Desktop/test.shp",
+		"/F/FBXTool/head_1.ABC",
+		"/F/FBXTool/head_3.fbx",
+		"/F/FBXTool/tra2fbx.fbx",
+		"/F/FBXTool/tra1fbx.fbx",
+		"/F/FBXTool/tra0fbx.fbx",
+		"/F/FBXTool/box_2.fbx",
+		"/F/FBXTool/head_4.fbx",
+		"/F/FBXTool/head_1.FBX",
+		"/F/FBXTool/face_1.fbx",
+		"/F/FBXTool/face_1_1.fbx",
+		"/F/FBXTool/box_1.fbx",
+		"/F/FBXTool/face_1_14_max.fbx",
+		"/F/FBXTool/face_2_14_maya.fbx",
+		"/F/FBXTool/face_2.fbx",
+		"/F/FBXTool/face_4.fbx",
+		"/F/FBXTool/face_3.fbx",
+		"/F/FBXTool/ue_face_3.FBX",
+		"/F/FBXTool/face_6.fbx",
+		"/F/FBXTool/test1.fbx",
+		"/F/FBXTool/face_5_maya_ref.fbx",
+		"/F/FBXTool/face_4_maya.fbx",
+		"/C/Users/leifuyu/Documents/maya/FBX/Logs/2020.0.1/maya2019exp.log",
+		"/F/FBXTool/cylinder_1.fbx",
+		"/F/FBXTool/cylinder_2.fbx",
+		"/F/FBXTool/face_3_max.fbx",
+		"/F/FBXTool/nor1.txt",
+		"/F/FBXTool/nor2.txt",
+		"/F/maya/011_1/Atom/girl011_fight_base_idle01_joint.atom",
+		"/F/maya/011_1/Atom/girl011_fight_base_idle01_bs.atom",
+		"/C/Users/leifuyu/AppData/Local/Temp/maya2019setup.log",
+		"/F/FBXTool/monkey_0.fbx",
+		"/C/Users/leifuyu/Downloads/girl015_face01_skm.fbx",
+		"/F/maya/skin/girl014_face01_skm_face.fbx",
+		"/C/Users/leifuyu/Documents/maya/FBX/Logs/2020.0.1/maya2019imp.log"
+	],
+	"find":
+	{
+		"height": 23.0
+	},
+	"find_in_files":
+	{
+		"height": 0.0,
+		"where_history":
+		[
+		]
+	},
+	"find_state":
+	{
+		"case_sensitive": false,
+		"find_history":
+		[
+		],
+		"highlight": true,
+		"in_selection": false,
+		"preserve_case": false,
+		"regex": false,
+		"replace_history":
+		[
+		],
+		"reverse": false,
+		"scrollbar_highlights": true,
+		"show_context": true,
+		"use_buffer2": true,
+		"use_gitignore": true,
+		"whole_word": false,
+		"wrap": true
+	},
+	"groups":
+	[
+		{
+			"sheets":
+			[
+			]
+		}
+	],
+	"incremental_find":
+	{
+		"height": 23.0
+	},
+	"input":
+	{
+		"height": 0.0
+	},
+	"layout":
+	{
+		"cells":
+		[
+			[
+				0,
+				0,
+				1,
+				1
+			]
+		],
+		"cols":
+		[
+			0.0,
+			1.0
+		],
+		"rows":
+		[
+			0.0,
+			1.0
+		]
+	},
+	"menu_visible": true,
+	"output.find_results":
+	{
+		"height": 0.0
+	},
+	"pinned_build_system": "",
+	"project": "project.sublime-project",
+	"replace":
+	{
+		"height": 42.0
+	},
+	"save_all_on_build": true,
+	"select_file":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"select_project":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"select_symbol":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"selected_group": 0,
+	"settings":
+	{
+	},
+	"show_minimap": true,
+	"show_open_files": false,
+	"show_tabs": true,
+	"side_bar_visible": true,
+	"side_bar_width": 150.0,
+	"status_bar_visible": true,
+	"template_settings":
+	{
+	}
+}

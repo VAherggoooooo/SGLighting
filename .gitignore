@@ -15,3 +15,5 @@ Saved
 .idea 
 .vsconfig
 Platforms
+BakingLab-self/BakingLab/Debug/
+*.cache
