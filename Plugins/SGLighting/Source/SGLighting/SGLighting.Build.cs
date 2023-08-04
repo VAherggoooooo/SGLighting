@@ -39,6 +39,7 @@ public class SGLighting : ModuleRules
 				"Engine",
 				"RenderCore",
 				"RHI",
+				"ProceduralMeshComponent",
 				// ... add other public dependencies that you statically link with here ...
 			}
 		);
@@ -58,7 +59,6 @@ public class SGLighting : ModuleRules
 				"Slate",
 				"SlateCore",
 				"LevelEditor",
-				"ProceduralMeshComponent",
 				"MaterialShaderQualitySettings",
 				// ... add private dependencies that you statically link with here ...	
 			}

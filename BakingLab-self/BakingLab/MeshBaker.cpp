@@ -708,7 +708,8 @@ template<typename TBaker> static bool BakeDriver(BakeThreadContext& context, TBa
 
             // Create a random ray direction in tangent space, then convert to world space
             Float3 rayStart = bakePoint.Position;
-            Float3 rayDirTS = baker.SampleDirection(sampleSet.Pixel());
+            Float2 angle = sampleSet.Pixel();
+            Float3 rayDirTS = baker.SampleDirection(angle);
             Float3 rayDirWS = Float3::Transform(rayDirTS, tangentFrame);
             rayDirWS = Float3::Normalize(rayDirWS);
 
@@ -1378,9 +1379,10 @@ void MeshBaker::Initialize(const BakeInputData& inputData)
     numRenderSamples = AppSettings::NumRenderSamples;
 
     bakeSampleMode = AppSettings::BakeSampleMode;
-    numBakeSamples = AppSettings::NumBakeSamples;
+    numBakeSamples = AppSettings::NumBakeSamples;//25
 
     numThreads = GetNumThreads();
+    numThreads = 1;
     renderSamples.resize(numThreads);
     bakeSamples.resize(numThreads);
 

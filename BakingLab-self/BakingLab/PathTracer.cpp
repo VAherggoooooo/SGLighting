@@ -206,13 +206,13 @@ Float3 SampleSunLight(const Float3& position, const Float3& normal, RTCScene sce
 }
 
 // Generates a full list of sample points for all integration types
-void GenerateIntegrationSamples(IntegrationSamples& samples, uint64 sqrtNumSamples, uint64 tileSizeX, uint64 tileSizeY,
-                                SampleModes sampleMode, uint64 numIntegrationTypes, Random& rng)
+void GenerateIntegrationSamples(IntegrationSamples& samples, uint64 sqrtNumSamples/*25*/, uint64 tileSizeX/*64*/, uint64 tileSizeY/*1*/,
+                                SampleModes sampleMode, uint64 numIntegrationTypes/*5*/, Random& rng)
 {
-    const uint64 numSamplesPerPixel = sqrtNumSamples * sqrtNumSamples;
-    const uint64 numTilePixels = tileSizeX * tileSizeY;
+    const uint64 numSamplesPerPixel = sqrtNumSamples * sqrtNumSamples;//sample num in a single pixel
+    const uint64 numTilePixels = tileSizeX * tileSizeY;//64 * 1
     const uint64 numSamplesPerTile = numSamplesPerPixel * numTilePixels;
-    samples.Init(numTilePixels, numIntegrationTypes, numSamplesPerPixel);
+    samples.Init(numTilePixels, numIntegrationTypes, numSamplesPerPixel);//numIntegrationTypes 5   numSamplesPerPixel 16
 
     for(uint64 pixelIdx = 0; pixelIdx < numTilePixels; ++pixelIdx)
     {
@@ -245,6 +245,8 @@ void GenerateIntegrationSamples(IntegrationSamples& samples, uint64 sqrtNumSampl
             }
         }
     }
+
+
 }
 
 // Returns the incoming radiance along the ray specified by params.RayDir, computed using unidirectional

@@ -1,6 +1,7 @@
 #include "SGLighting/Visualize/Public/VisualizeManager.h"
 
 #include "AnalyticsPropertyStore.h"
+#include "Curves/CurveLinearColorAtlas.h"
 #include "Engine/TextureRenderTarget2D.h"
 #include "Kismet/KismetRenderingLibrary.h"
 #include "SGLighting/Visualize/Public/BakePoint.h"
@@ -40,6 +41,7 @@ void UVisualLizeManager::GetVisualBakePointLocationsFromRT(const UObject* WorldC
 	check(InRT != nullptr);
 
 	FRenderTarget* RenderTarget = InRT->GameThread_GetRenderTargetResource();
+	
 	TArray<FFloat16Color> FloatColors;
 	RenderTarget->ReadFloat16Pixels(FloatColors);
 	Locations.Empty();

@@ -66,7 +66,6 @@ void FSGLightingModule::BakeSGLighting_Clicked()
 	// 						FText::FromString(TEXT("SGLighting.cpp"))
 	// 				   );
 	// FMessageDialog::Open(EAppMsgType::Ok, DialogText);
-
 	
 	//FLevelEditorActionCallbacks::BuildLightingOnly_Execute();
 	ULevelManager* LevelManager = NewObject<ULevelManager>();

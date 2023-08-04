@@ -519,7 +519,7 @@ namespace AppSettings
         NumBakeSamples.Initialize(tweakBar, "NumBakeSamples", "Baking", "Sqrt Num Samples", "The square root of the number of sample rays to use for baking GI", 25, 1, 100);
         Settings.AddSetting(&NumBakeSamples);
 
-        BakeSampleMode.Initialize(tweakBar, "BakeSampleMode", "Baking", "Sample Mode", "", SampleModes::CMJ, 5, SampleModesLabels);
+        BakeSampleMode.Initialize(tweakBar, "BakeSampleMode", "Baking", "Sample Mode", "", SampleModes::Random, 5, SampleModesLabels);
         Settings.AddSetting(&BakeSampleMode);
 
         MaxBakePathLength.Initialize(tweakBar, "MaxBakePathLength", "Baking", "Max Bake Path Length", "Maximum path length (bounces + 2) to use for baking GI (set to -1 for infinite)", -1, -1, 2147483647);

@@ -80,10 +80,10 @@ TGlobalResource<FRectangleIndexBuffer> GRectangleIndexBuffer;
 /**
  * @brief globalshader
  */
-class FSimpleRDGGlobalShader : public FGlobalShader
+class FRDGGlobalShader : public FGlobalShader
 {
 public:
-	SHADER_USE_PARAMETER_STRUCT(FSimpleRDGGlobalShader, FGlobalShader);
+	SHADER_USE_PARAMETER_STRUCT(FRDGGlobalShader, FGlobalShader);
 
 	//添加要传入shader的参数
 	BEGIN_SHADER_PARAMETER_STRUCT(FParameters, )
@@ -103,28 +103,28 @@ public:
 /**
  * @brief vertex shader
  */
-class FSGVertexShader : public FSimpleRDGGlobalShader
+class FSGVertexShader : public FRDGGlobalShader
 {
 public:
 	DECLARE_GLOBAL_SHADER(FSGVertexShader);
 
 	FSGVertexShader() {}
 
-	FSGVertexShader(const ShaderMetaType::CompiledShaderInitializerType &Initializer) : FSimpleRDGGlobalShader(Initializer) {}
+	FSGVertexShader(const ShaderMetaType::CompiledShaderInitializerType &Initializer) : FRDGGlobalShader(Initializer) {}
 };
 
 
 /**
  * @brief pixel shader
  */
-class FSGPixelShader : public FSimpleRDGGlobalShader
+class FSGPixelShader : public FRDGGlobalShader
 {
 public:
 	DECLARE_GLOBAL_SHADER(FSGPixelShader);
 
 	FSGPixelShader() {}
 
-	FSGPixelShader(const ShaderMetaType::CompiledShaderInitializerType &Initializer) : FSimpleRDGGlobalShader(Initializer) {}
+	FSGPixelShader(const ShaderMetaType::CompiledShaderInitializerType &Initializer) : FRDGGlobalShader(Initializer) {}
 };
 
 
@@ -150,8 +150,8 @@ public:
 
 //绑定shader
 IMPLEMENT_GLOBAL_SHADER(FSGComputeShader, "/Plugins/SGLighting/Private/SimpleComputeShader.usf", "MainCS", SF_Compute);
-IMPLEMENT_GLOBAL_SHADER(FSGVertexShader, "/Plugins/SGLighting/Private/SimplePixelShader.usf", "MainVS", SF_Vertex);
-IMPLEMENT_GLOBAL_SHADER(FSGPixelShader, "/Plugins/SGLighting/Private/SimplePixelShader.usf", "MainPS", SF_Pixel);
+IMPLEMENT_GLOBAL_SHADER(FSGVertexShader, "/Plugins/SGLighting/Private/GenerateBakePointShader.usf", "MainVS", SF_Vertex);
+IMPLEMENT_GLOBAL_SHADER(FSGPixelShader, "/Plugins/SGLighting/Private/GenerateBakePointShader.usf", "MainPS", SF_Pixel);
 
 /*
  * Render Function 
@@ -223,9 +223,7 @@ void RDGDraw(FRHICommandListImmediate &RHIImmCmdList, FTexture2DRHIRef RenderTar
 	Parameters->RenderTargets[0] = FRenderTargetBinding(RDGRenderTarget, ERenderTargetLoadAction::ENoAction);
 
 	UE::Math::TMatrix<float> M_Matrix = GRectangleVertexBuffer.GetMMatrix();
-	//UE_LOG(LogTemp, Warning, TEXT("M: %s"), *(M_Matrix.ToString()));
-	//Parameters_Vertex->M_Matrix = FMatrix44f();
-	Parameters->M_Matrix = FMatrix44f(M_Matrix);//TODO:debug
+	Parameters->M_Matrix = FMatrix44f(M_Matrix);
 	
 	
 	//get shader
@@ -259,9 +257,6 @@ void RDGDraw(FRHICommandListImmediate &RHIImmCmdList, FTexture2DRHIRef RenderTar
 
 			RHICmdList.SetStreamSource(0, GRectangleVertexBuffer.VertexBufferRHI, 0);
 
-			//UE_LOG(LogTemp, Warning, TEXT("ver: %d"), GRectangleVertexBuffer.VertexNum);
-			//UE_LOG(LogTemp, Warning, TEXT("tri: %d"), GRectangleIndexBuffer.PrimitiveNum);
-			
 			RHICmdList.DrawIndexedPrimitive(
 				GRectangleIndexBuffer.IndexBufferRHI,
 				/*BaseVertexIndex=*/0,

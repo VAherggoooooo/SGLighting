@@ -1,0 +1,26 @@
+#include "/Engine/Private/Common.ush"
+
+struct V2f
+{
+	float4 vertex : ATTRIBUTE0;
+	float2 texcoord : ATTRIBUTE1;
+};
+
+struct PixelData
+{
+	float4 position : SV_POSITION;
+	float2 uv : TEXCOORD0;
+};
+
+
+
+void MainVS(in V2f appData, out PixelData pixelData)
+{
+	pixelData.position = appData.vertex;
+	pixelData.uv = appData.texcoord;
+}
+
+void MainPS(in PixelData pixelData, out float4 finalColor : SV_Target0)
+{
+	finalColor = 1.0;
+}

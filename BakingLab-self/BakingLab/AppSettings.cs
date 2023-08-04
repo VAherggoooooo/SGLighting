@@ -685,7 +685,7 @@ public class Settings
 
         [UseAsShaderConstant(false)]
         [DisplayName("Sample Mode")]
-        SampleModes BakeSampleMode = SampleModes.CMJ;
+        SampleModes BakeSampleMode = SampleModes.Random;
 
         [HelpText("Maximum path length (bounces + 2) to use for baking GI (set to -1 for infinite)")]
         [UseAsShaderConstant(false)]
