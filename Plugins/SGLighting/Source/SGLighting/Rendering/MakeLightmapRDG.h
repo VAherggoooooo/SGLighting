@@ -2,17 +2,28 @@
 #include "RenderGraph.h"
 #include "SGLighting/System/Mesh/Public/MeshCollecter.h"
 #include "CoreMinimal.h"
+#include "DataDrivenShaderPlatformInfo.h"
+#include "GlobalShader.h"
 #include "Kismet/BlueprintFunctionLibrary.h"
 #include "Math/TransformCalculus3D.h"
 #include "SGLighting/System/Mesh/Public/BVHData.h"
+#include "ProceduralMeshComponent.h"
 #include "MakeLightmapRDG.generated.h"
 
 class FRHICommandListImmediate;
+class FRDGGlobalShader;
 struct IPooledRenderTarget;
 
+enum OutRTType
+{
+	None = 0,
+	PositionWS,
+	NormalWS,
+	TangentWS,
+};
 
 //blurprint node 函数作为起点
-UCLASS(MinimalAPI, meta = (ScriptName = "SimpleRenderingExample"))
+UCLASS(MinimalAPI, meta = (ScriptName = "SG Lighting"))
 class UMakeLightmapBlueprintLibrary : public UBlueprintFunctionLibrary
 {
 	GENERATED_BODY()
@@ -21,7 +32,7 @@ class UMakeLightmapBlueprintLibrary : public UBlueprintFunctionLibrary
 	static void UseRDGComput(const UObject* WorldContextObject, UTextureRenderTarget2D* OutputRenderTarget);
 
 	UFUNCTION(BlueprintCallable, Category = "SG Lightmap", meta = (WorldContext = "WorldContextObject"))
-	static void UseRDGDraw(const UObject* WorldContextObject, UTextureRenderTarget2D* OutputRenderTarget, UTexture2D* InTexture, int32 Size);
+	static void UseRDGDraw(const UObject* WorldContextObject, UTextureRenderTarget2D* Output_Position_RT, UTextureRenderTarget2D* Output_Normal_RT, UTextureRenderTarget2D* Output_Tangent_RT);
 };
 
 
@@ -46,6 +57,8 @@ struct FTextureVertex
 	FVector4f Position;
 	FVector2f UV;
 	FVector4f Position_OS;
+	FVector4f Normal;
+	FVector4f Tangent;
 };
 
 
@@ -86,6 +99,8 @@ public:
 			Vertices[i].Position = FVector4f((BVHData->UVs2[i].X * 2.0f) - 1.0f, ((1 - BVHData->UVs2[i].Y) * 2.0f) - 1.0f, 0, 1);//右下角
 			Vertices[i].UV = FVector2f(BVHData->UVs2[i].X, BVHData->UVs2[i].Y);
 			Vertices[i].Position_OS = FVector4f(BVHData->VerticePositions[i].X, BVHData->VerticePositions[i].Y, BVHData->VerticePositions[i].Z, 1.0f);
+			Vertices[i].Normal = FVector4f(BVHData->Normals[i].X, BVHData->Normals[i].Y, BVHData->Normals[i].Z, 0.0f);
+			Vertices[i].Tangent = FVector4f(BVHData->Tangents[i].TangentX.X, BVHData->Tangents[i].TangentX.Y, BVHData->Tangents[i].TangentX.Z, 0.0f);
 			//Vertices[i].Position_OS = FVector4f(1,1,1,1);
 			//UE_LOG(LogTemp, Warning, TEXT("vpos: (%f, %f ): vuv: (%f, %f)"), VerticeIDs[i].Position.X, VerticeIDs[i].Position.Y, VerticeIDs[i].UV.X, VerticeIDs[i].UV.Y);
 		}
@@ -109,14 +124,13 @@ public:
 			return m;
 		}
 		
-		TArray<AActor*> meshs = BVHData->GetMeshCollecter()->GetAllStaticMeshActors();
+		TArray<AActor*> meshs = BVHData->GetMeshCollecter()->GetAllStaticMeshActors(false, true);
 		AActor* mesh = meshs.Num() > 0? meshs[0] : nullptr;
 		if(mesh != nullptr)
 		{
 			UE::Math::TMatrix<double> _m_Matrix = mesh->GetTransform().ToMatrixWithScale();
 			UE::Math::TMatrix<float> M_Matrix = UE::Math::TMatrix<float>(_m_Matrix);
 			m = M_Matrix;
-			//UE_LOG(LogTemp, Warning, TEXT("%s"), *(M_Matrix.ToString()));
 		}
 
 		return m;
@@ -201,11 +215,111 @@ public:
 		Elements.Add(FVertexElement(0, STRUCT_OFFSET(FTextureVertex, Position), VET_Float2, 0, Stride));
 		Elements.Add(FVertexElement(0, STRUCT_OFFSET(FTextureVertex, UV), VET_Float2, 1, Stride));
 		Elements.Add(FVertexElement(0, STRUCT_OFFSET(FTextureVertex, Position_OS), VET_Float4, 2, Stride));
+		Elements.Add(FVertexElement(0, STRUCT_OFFSET(FTextureVertex, Normal), VET_Float4, 3, Stride));
+		Elements.Add(FVertexElement(0, STRUCT_OFFSET(FTextureVertex, Tangent), VET_Float4, 4, Stride));
 		VertexDeclarationRHI = RHICreateVertexDeclaration(Elements);
 	}
 	virtual void ReleaseRHI() override
 	{
 		VertexDeclarationRHI.SafeRelease();
+	}
+};
+
+/**
+ * @brief globalshader
+ */
+class FRDGGlobalShader : public FGlobalShader
+{
+public:
+	SHADER_USE_PARAMETER_STRUCT(FRDGGlobalShader, FGlobalShader);
+
+	//添加要传入shader的参数
+	BEGIN_SHADER_PARAMETER_STRUCT(FParameters, )
+		SHADER_PARAMETER(FMatrix44f, M_Matrix)
+		SHADER_PARAMETER(FMatrix44f, M_Matrix_Invers_Trans)
+		RENDER_TARGET_BINDING_SLOTS()
+	END_SHADER_PARAMETER_STRUCT()
+
+	static bool ShouldCompilePermutation(const FGlobalShaderPermutationParameters &Parameters)
+	{
+		return IsFeatureLevelSupported(Parameters.Platform, ERHIFeatureLevel::ES3_1);
+	}
+};
+
+/**
+ * @brief vertex shader
+ */
+class FSGVertexShader : public FRDGGlobalShader
+{
+public:
+	DECLARE_GLOBAL_SHADER(FSGVertexShader);
+
+	FSGVertexShader() {}
+
+	FSGVertexShader(const ShaderMetaType::CompiledShaderInitializerType &Initializer) : FRDGGlobalShader(Initializer) {}
+};
+
+
+/**
+ * @brief pixel shader
+ */
+class FSGPixelShader : public FRDGGlobalShader
+{
+public:
+	DECLARE_GLOBAL_SHADER(FSGPixelShader);
+
+	FSGPixelShader() {}
+
+	FSGPixelShader(const ShaderMetaType::CompiledShaderInitializerType &Initializer) : FRDGGlobalShader(Initializer) {}
+};
+
+class FSGPixelPositionShader : public FRDGGlobalShader
+{
+public:
+	DECLARE_GLOBAL_SHADER(FSGPixelPositionShader);
+
+	FSGPixelPositionShader() {}
+
+	FSGPixelPositionShader(const ShaderMetaType::CompiledShaderInitializerType &Initializer) : FRDGGlobalShader(Initializer) {}
+};
+
+class FSGPixelNormalShader : public FRDGGlobalShader
+{
+public:
+	DECLARE_GLOBAL_SHADER(FSGPixelNormalShader);
+
+	FSGPixelNormalShader() {}
+
+	FSGPixelNormalShader(const ShaderMetaType::CompiledShaderInitializerType &Initializer) : FRDGGlobalShader(Initializer) {}
+};
+
+class FSGPixelTangentShader : public FRDGGlobalShader
+{
+public:
+	DECLARE_GLOBAL_SHADER(FSGPixelTangentShader);
+
+	FSGPixelTangentShader() {}
+
+	FSGPixelTangentShader(const ShaderMetaType::CompiledShaderInitializerType &Initializer) : FRDGGlobalShader(Initializer) {}
+};
+
+
+/**
+ * @brief compute shader
+ */
+class FSGComputeShader : public FGlobalShader
+{
+public:
+	DECLARE_GLOBAL_SHADER(FSGComputeShader);
+	SHADER_USE_PARAMETER_STRUCT(FSGComputeShader, FGlobalShader);
+
+	BEGIN_SHADER_PARAMETER_STRUCT(FParameters, )
+	SHADER_PARAMETER_RDG_TEXTURE_UAV(RWTexture2D<float4>, OutTexture)
+	END_SHADER_PARAMETER_STRUCT()
+
+	static bool ShouldCompilePermutation(const FGlobalShaderPermutationParameters &Parameters)
+	{
+		return RHISupportsComputeShaders(Parameters.Platform);
 	}
 };
 
@@ -219,5 +333,6 @@ extern TGlobalResource<FRectangleIndexBuffer> GRectangleIndexBuffer;
 //RDG Method
 void RDGCompute(FRHICommandListImmediate &RHIImmCmdList, FTexture2DRHIRef RenderTargetRHI);
 
-void RDGDraw(FRHICommandListImmediate &RHIImmCmdList, FTexture2DRHIRef RenderTargetRHI, FTexture2DRHIRef InTexture, int32 Size);
+void RDGDraw(FRHICommandListImmediate &RHIImmCmdList, FTexture2DRHIRef PositonRHI, FTexture2DRHIRef NormalRHI, FTexture2DRHIRef TangentRHI);
 
+void DrawToRT(FRHICommandListImmediate &RHIImmCmdList, FTexture2DRHIRef RTRHI, OutRTType Type);

@@ -34,7 +34,7 @@ TArray<AActor*> UMeshCollecter::GetAllActors(bool bPrintName)
 	return allActors;
 }
 
-TArray<AActor*> UMeshCollecter::GetAllStaticMeshActors(bool bPrintName)
+TArray<AActor*> UMeshCollecter::GetAllStaticMeshActors(bool bPrintName, bool bStatic)
 {
 	TArray<AActor*> allActors = GetAllActors(false);
 	TArray<AActor*> smActors;
@@ -42,7 +42,15 @@ TArray<AActor*> UMeshCollecter::GetAllStaticMeshActors(bool bPrintName)
 	{
 		UStaticMeshComponent* smComp = act->GetComponentByClass<UStaticMeshComponent>();
 		if(smComp != nullptr)
-			smActors.Add(act);
+			if(bStatic)
+			{
+				if(smComp->Mobility == EComponentMobility::Static)
+					smActors.Add(act);
+			}
+			else
+			{
+				smActors.Add(act);
+			}
 	}
 
 	if(bPrintName)

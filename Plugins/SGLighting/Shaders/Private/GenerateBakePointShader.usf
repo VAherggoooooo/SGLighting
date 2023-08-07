@@ -1,35 +1,62 @@
 #include "/Engine/Public/Platform.ush"
 #include "/Engine/Private/Common.ush"  
 
-Texture2D TextureVal;
-SamplerState TextureSampler;
 float4x4 M_Matrix;
+float4x4 M_Matrix_Invers_Trans;
 
 void MainVS(
  in float4 InPosition : ATTRIBUTE0,
  in float2 InUV : ATTRIBUTE1,
  in float4 InPosition_OS : ATTRIBUTE2,
+ in float4 InNormal : ATTRIBUTE3,
+ in float4 InTangent : ATTRIBUTE4,
  out float4 OutPosition : SV_POSITION,
  out float2 OutUV : TEXCOORD0,
- out float4 OutPosition_WS : TEXCOORD1
+ out float4 OutPosition_WS : TEXCOORD1,
+ out float4 OutNormal_WS : TEXCOORD2,
+ out float4 OutTangent_WS : TEXCOORD3
  )
 {
     OutPosition = InPosition;
     OutUV = InUV;
-    //OutPosition_WS = InPosition_OS;
 
     OutPosition_WS = mul(float4(InPosition_OS.xyz, 1), M_Matrix);
-    //OutPosition_WS = mul(M_Matrix, float4(InPosition_OS.xyz, 1));
+    OutNormal_WS = normalize(mul(float4(InNormal.xyz, 0), M_Matrix_Invers_Trans));
+    OutTangent_WS = normalize(mul(float4(InTangent.xyz, 0), M_Matrix));
 }
 
-void MainPS(
+void MainPS_Position(
     in float4 Position : SV_POSITION,
     in float2 UV : TEXCOORD0, 
     in float4 Position_WS : TEXCOORD1,
+    in float4 Normal_WS : TEXCOORD2,
+    in float4 Tangent_WS : TEXCOORD3,
     out float4 OutColor : SV_Target0
     )
 {
     OutColor = Position_WS;
-    //OutColor = float4(UV.x,UV.y,0,1);
-    //OutColor = float4(TextureVal.Sample(TextureSampler, UV.xy).rgb, 1.0f);  
+}
+
+void MainPS_Normal(
+    in float4 Position : SV_POSITION,
+    in float2 UV : TEXCOORD0, 
+    in float4 Position_WS : TEXCOORD1,
+    in float4 Normal_WS : TEXCOORD2,
+    in float4 Tangent_WS : TEXCOORD3,
+    out float4 OutColor : SV_Target0
+    )
+{
+    OutColor = Normal_WS;
+}
+
+void MainPS_Tangent(
+    in float4 Position : SV_POSITION,
+    in float2 UV : TEXCOORD0, 
+    in float4 Position_WS : TEXCOORD1,
+    in float4 Normal_WS : TEXCOORD2,
+    in float4 Tangent_WS : TEXCOORD3,
+    out float4 OutColor : SV_Target0
+    )
+{
+    OutColor = Tangent_WS;
 } 

@@ -28,19 +28,20 @@ void UMakeLightmapBlueprintLibrary::UseRDGComput(const UObject *WorldContextObje
 	);
 }
 
-void UMakeLightmapBlueprintLibrary::UseRDGDraw(const UObject *WorldContextObject, UTextureRenderTarget2D *OutputRenderTarget, UTexture2D *InTexture, int32 Size)
+void UMakeLightmapBlueprintLibrary::UseRDGDraw(const UObject* WorldContextObject, UTextureRenderTarget2D* Output_Position_RT, UTextureRenderTarget2D* Output_Normal_RT, UTextureRenderTarget2D* Output_Tangent_RT)
 {
 	check(IsInGameThread());
 
 	//两张texture
-	FTexture2DRHIRef RenderTargetRHI = OutputRenderTarget->GameThread_GetRenderTargetResource()->GetRenderTargetTexture();
-	FTexture2DRHIRef InTextureRHI = InTexture->GetResource()->TextureRHI->GetTexture2D();
+	FTexture2DRHIRef positionRT = Output_Position_RT->GameThread_GetRenderTargetResource()->GetRenderTargetTexture();
+	FTexture2DRHIRef normalRT = Output_Normal_RT->GameThread_GetRenderTargetResource()->GetRenderTargetTexture();
+	FTexture2DRHIRef tangentRT = Output_Tangent_RT->GameThread_GetRenderTargetResource()->GetRenderTargetTexture();
 
 	ENQUEUE_RENDER_COMMAND(CaptureCommand)
 	(
-		[RenderTargetRHI, InTextureRHI, Size](FRHICommandListImmediate &RHICmdList)
+		[positionRT, normalRT, tangentRT](FRHICommandListImmediate &RHICmdList)
 		{
-			RDGDraw(RHICmdList, RenderTargetRHI, InTextureRHI, Size);
+			RDGDraw(RHICmdList, positionRT, normalRT, tangentRT);
 		}
 	);
 }
@@ -56,19 +57,19 @@ void ULightmapCollect::Init(UBVHData* _bvhData)
 
 void ULightmapCollect::UseRDGDraw(const UObject* WorldContextObject, UTextureRenderTarget2D* OutputRenderTarget, UTexture2D* InTexture, int32 Size)
 {
-	check(IsInGameThread());
-
-	//两张texture
-	FTexture2DRHIRef RenderTargetRHI = OutputRenderTarget->GameThread_GetRenderTargetResource()->GetRenderTargetTexture();
-	FTexture2DRHIRef InTextureRHI = InTexture->GetResource()->TextureRHI->GetTexture2D();
-
-	ENQUEUE_RENDER_COMMAND(CaptureCommand)
-	(
-		[RenderTargetRHI, InTextureRHI, Size](FRHICommandListImmediate &RHICmdList)
-		{
-			RDGDraw(RHICmdList, RenderTargetRHI, InTextureRHI, Size);
-		}
-	);
+	// check(IsInGameThread());
+	//
+	// //两张texture
+	// FTexture2DRHIRef RenderTargetRHI = OutputRenderTarget->GameThread_GetRenderTargetResource()->GetRenderTargetTexture();
+	// FTexture2DRHIRef InTextureRHI = InTexture->GetResource()->TextureRHI->GetTexture2D();
+	//
+	// ENQUEUE_RENDER_COMMAND(CaptureCommand)
+	// (
+	// 	[RenderTargetRHI, InTextureRHI, Size](FRHICommandListImmediate &RHICmdList)
+	// 	{
+	// 		RDGDraw(RHICmdList, RenderTargetRHI, InTextureRHI, Size);
+	// 	}
+	// );
 }
 
 
@@ -77,81 +78,15 @@ TGlobalResource<FRectangleVertexBuffer> GRectangleVertexBuffer;
 TGlobalResource<FRectangleIndexBuffer> GRectangleIndexBuffer;
 
 
-/**
- * @brief globalshader
- */
-class FRDGGlobalShader : public FGlobalShader
-{
-public:
-	SHADER_USE_PARAMETER_STRUCT(FRDGGlobalShader, FGlobalShader);
-
-	//添加要传入shader的参数
-	BEGIN_SHADER_PARAMETER_STRUCT(FParameters, )
-		SHADER_PARAMETER_TEXTURE(Texture2D, TextureVal)
-		SHADER_PARAMETER_SAMPLER(SamplerState, TextureSampler)
-		SHADER_PARAMETER(FMatrix44f, M_Matrix)
-		RENDER_TARGET_BINDING_SLOTS()
-	END_SHADER_PARAMETER_STRUCT()
-
-	static bool ShouldCompilePermutation(const FGlobalShaderPermutationParameters &Parameters)
-	{
-		return IsFeatureLevelSupported(Parameters.Platform, ERHIFeatureLevel::ES3_1);
-	}
-};
-
-
-/**
- * @brief vertex shader
- */
-class FSGVertexShader : public FRDGGlobalShader
-{
-public:
-	DECLARE_GLOBAL_SHADER(FSGVertexShader);
-
-	FSGVertexShader() {}
-
-	FSGVertexShader(const ShaderMetaType::CompiledShaderInitializerType &Initializer) : FRDGGlobalShader(Initializer) {}
-};
-
-
-/**
- * @brief pixel shader
- */
-class FSGPixelShader : public FRDGGlobalShader
-{
-public:
-	DECLARE_GLOBAL_SHADER(FSGPixelShader);
-
-	FSGPixelShader() {}
-
-	FSGPixelShader(const ShaderMetaType::CompiledShaderInitializerType &Initializer) : FRDGGlobalShader(Initializer) {}
-};
-
-
-/**
- * @brief compute shader
- */
-class FSGComputeShader : public FGlobalShader
-{
-public:
-	DECLARE_GLOBAL_SHADER(FSGComputeShader);
-	SHADER_USE_PARAMETER_STRUCT(FSGComputeShader, FGlobalShader);
-
-	BEGIN_SHADER_PARAMETER_STRUCT(FParameters, )
-	SHADER_PARAMETER_RDG_TEXTURE_UAV(RWTexture2D<float4>, OutTexture)
-	END_SHADER_PARAMETER_STRUCT()
-
-	static bool ShouldCompilePermutation(const FGlobalShaderPermutationParameters &Parameters)
-	{
-		return RHISupportsComputeShaders(Parameters.Platform);
-	}
-};
 
 
 //绑定shader
 IMPLEMENT_GLOBAL_SHADER(FSGComputeShader, "/Plugins/SGLighting/Private/SimpleComputeShader.usf", "MainCS", SF_Compute);
+
 IMPLEMENT_GLOBAL_SHADER(FSGVertexShader, "/Plugins/SGLighting/Private/GenerateBakePointShader.usf", "MainVS", SF_Vertex);
-IMPLEMENT_GLOBAL_SHADER(FSGPixelShader, "/Plugins/SGLighting/Private/GenerateBakePointShader.usf", "MainPS", SF_Pixel);
+IMPLEMENT_GLOBAL_SHADER(FSGPixelPositionShader, "/Plugins/SGLighting/Private/GenerateBakePointShader.usf", "MainPS_Position", SF_Pixel);
+IMPLEMENT_GLOBAL_SHADER(FSGPixelNormalShader, "/Plugins/SGLighting/Private/GenerateBakePointShader.usf", "MainPS_Normal", SF_Pixel);
+IMPLEMENT_GLOBAL_SHADER(FSGPixelTangentShader, "/Plugins/SGLighting/Private/GenerateBakePointShader.usf", "MainPS_Tangent", SF_Pixel);
 
 /*
  * Render Function 
@@ -199,78 +134,156 @@ void RDGCompute(FRHICommandListImmediate &RHIImmCmdList, FTexture2DRHIRef Render
 	RHIImmCmdList.CopyTexture(PooledRenderTarget->GetRenderTargetItem().ShaderResourceTexture, RenderTargetRHI->GetTexture2D(), FRHICopyTextureInfo());
 }
 
-void RDGDraw(FRHICommandListImmediate &RHIImmCmdList, FTexture2DRHIRef RenderTargetRHI, FTexture2DRHIRef InTexture, int32 Size)
+void RDGDraw(FRHICommandListImmediate &RHIImmCmdList, FTexture2DRHIRef PositonRHI, FTexture2DRHIRef NormalRHI, FTexture2DRHIRef TangentRHI)
 {
 	check(IsInRenderingThread());
-
-	//Create PooledRenderTarget
-	const FRDGTextureDesc& RenderTargetDesc = FRDGTextureDesc::Create2D(RenderTargetRHI->GetSizeXY(), RenderTargetRHI->GetFormat(), FClearValueBinding::Black,  TexCreate_RenderTargetable | TexCreate_ShaderResource | TexCreate_UAV);
-	TRefCountPtr<IPooledRenderTarget> PooledRenderTarget;
-
-	//RDG Begin
-	FRDGBuilder GraphBuilder(RHIImmCmdList);
-	FRDGTextureRef RDGRenderTarget = GraphBuilder.CreateTexture(RenderTargetDesc, TEXT("RDGRenderTarget"));
 
 	GRectangleVertexBuffer.InitRHI();
 	GTextureVertexDeclaration.InitRHI();
 	GRectangleIndexBuffer.InitRHI();
-	
-	//创建参数
-	FSGPixelShader::FParameters *Parameters = GraphBuilder.AllocParameters<FSGPixelShader::FParameters>();
-	
-	Parameters->TextureVal = InTexture;
-	Parameters->TextureSampler = TStaticSamplerState<SF_Trilinear, AM_Clamp, AM_Clamp, AM_Clamp>::GetRHI();
-	Parameters->RenderTargets[0] = FRenderTargetBinding(RDGRenderTarget, ERenderTargetLoadAction::ENoAction);
 
+	DrawToRT(RHIImmCmdList, PositonRHI, OutRTType::PositionWS);
+	DrawToRT(RHIImmCmdList, NormalRHI, OutRTType::NormalWS);
+	DrawToRT(RHIImmCmdList, TangentRHI, OutRTType::TangentWS);
+}
+
+void DrawToRT(FRHICommandListImmediate &RHIImmCmdList, FTexture2DRHIRef RTRHI, OutRTType Type)
+{
+	const FRDGTextureDesc& RenderTargetDesc = FRDGTextureDesc::Create2D(RTRHI->GetSizeXY(), RTRHI->GetFormat(), FClearValueBinding::Black,  TexCreate_RenderTargetable | TexCreate_ShaderResource | TexCreate_UAV);
+	FRDGBuilder GraphBuilder(RHIImmCmdList);
+	FRDGTextureRef RDGRenderTarget = GraphBuilder.CreateTexture(RenderTargetDesc, TEXT("RDGRenderTarget"));
+
+	FRDGGlobalShader::FParameters *Parameters = GraphBuilder.AllocParameters<FSGPixelShader::FParameters>();
+	Parameters->RenderTargets[0] = FRenderTargetBinding(RDGRenderTarget, ERenderTargetLoadAction::ENoAction);
 	UE::Math::TMatrix<float> M_Matrix = GRectangleVertexBuffer.GetMMatrix();
 	Parameters->M_Matrix = FMatrix44f(M_Matrix);
-	
+	Parameters->M_Matrix_Invers_Trans = FMatrix44f(M_Matrix.Inverse().GetTransposed());
 	
 	//get shader
 	const ERHIFeatureLevel::Type FeatureLevel = GMaxRHIFeatureLevel; //ERHIFeatureLevel::SM5
 	FGlobalShaderMap *GlobalShaderMap = GetGlobalShaderMap(FeatureLevel);
+	TRefCountPtr<IPooledRenderTarget> PooledRenderTarget;
 	TShaderMapRef<FSGVertexShader> VertexShader(GlobalShaderMap);
-	TShaderMapRef<FSGPixelShader> PixelShader(GlobalShaderMap);
+	TShaderMapRef<FSGPixelPositionShader> PixelShader_Position(GlobalShaderMap);
+	TShaderMapRef<FSGPixelNormalShader> PixelShader_Normal(GlobalShaderMap);
+	TShaderMapRef<FSGPixelTangentShader> PixelShader_Tangent(GlobalShaderMap);
 
-	GraphBuilder.AddPass(RDG_EVENT_NAME("RDGDraw"),Parameters,ERDGPassFlags::Raster,
-		[Parameters, VertexShader, PixelShader, GlobalShaderMap](FRHICommandList &RHICmdList)
-		{
-			FRHITexture2D *RT = Parameters->RenderTargets[0].GetTexture()->GetRHI()->GetTexture2D();
-			RHICmdList.SetViewport(0, 0, 0.0f, RT->GetSizeX(), RT->GetSizeY(), 1.0f);
-
-			FGraphicsPipelineStateInitializer GraphicsPSOInit;
-			RHICmdList.ApplyCachedRenderTargets(GraphicsPSOInit);
-			GraphicsPSOInit.DepthStencilState = TStaticDepthStencilState<false, CF_Always>::GetRHI();
-			GraphicsPSOInit.BlendState = TStaticBlendState<>::GetRHI();
-			GraphicsPSOInit.RasterizerState = TStaticRasterizerState<>::GetRHI();
-			GraphicsPSOInit.PrimitiveType = PT_TriangleList;
-			GraphicsPSOInit.BoundShaderState.VertexDeclarationRHI = GTextureVertexDeclaration.VertexDeclarationRHI;
-
-			GraphicsPSOInit.BoundShaderState.VertexShaderRHI = VertexShader.GetVertexShader();
-			GraphicsPSOInit.BoundShaderState.PixelShaderRHI = PixelShader.GetPixelShader();
-			
-			SetGraphicsPipelineState(RHICmdList, GraphicsPSOInit,0);
-			RHICmdList.SetStencilRef(0);
-			
-			SetShaderParameters(RHICmdList, VertexShader, VertexShader.GetVertexShader(), *Parameters);
-			SetShaderParameters(RHICmdList, PixelShader, PixelShader.GetPixelShader(), *Parameters);
-
-			RHICmdList.SetStreamSource(0, GRectangleVertexBuffer.VertexBufferRHI, 0);
-
-			RHICmdList.DrawIndexedPrimitive(
-				GRectangleIndexBuffer.IndexBufferRHI,
-				/*BaseVertexIndex=*/0,
-				/*MinIndex=*/0,
-				/*NumVertices=*/GRectangleVertexBuffer.VertexNum,
-				/*StartIndex=*/0,
-				/*NumPrimitives=*/GRectangleIndexBuffer.PrimitiveNum,
-				/*NumInstances=*/1);
-		}
-	);
+	if(Type == OutRTType::NormalWS)
+	{
+		GraphBuilder.AddPass(RDG_EVENT_NAME("RDGDraw"),Parameters,ERDGPassFlags::Raster,
+		[Parameters, VertexShader, PixelShader_Normal, GlobalShaderMap](FRHICommandList &RHICmdList)
+			{
+				FRHITexture2D *RT = Parameters->RenderTargets[0].GetTexture()->GetRHI()->GetTexture2D();
+				RHICmdList.SetViewport(0, 0, 0.0f, RT->GetSizeX(), RT->GetSizeY(), 1.0f);
+	
+				FGraphicsPipelineStateInitializer GraphicsPSOInit;
+				RHICmdList.ApplyCachedRenderTargets(GraphicsPSOInit);
+				GraphicsPSOInit.DepthStencilState = TStaticDepthStencilState<false, CF_Always>::GetRHI();
+				GraphicsPSOInit.BlendState = TStaticBlendState<>::GetRHI();
+				GraphicsPSOInit.RasterizerState = TStaticRasterizerState<>::GetRHI();
+				GraphicsPSOInit.PrimitiveType = PT_TriangleList;
+				GraphicsPSOInit.BoundShaderState.VertexDeclarationRHI = GTextureVertexDeclaration.VertexDeclarationRHI;
+	
+				GraphicsPSOInit.BoundShaderState.VertexShaderRHI = VertexShader.GetVertexShader();
+				GraphicsPSOInit.BoundShaderState.PixelShaderRHI = PixelShader_Normal.GetPixelShader();
+				
+				SetGraphicsPipelineState(RHICmdList, GraphicsPSOInit,0);
+				RHICmdList.SetStencilRef(0);
+				
+				SetShaderParameters(RHICmdList, VertexShader, VertexShader.GetVertexShader(), *Parameters);
+				SetShaderParameters(RHICmdList, PixelShader_Normal, PixelShader_Normal.GetPixelShader(), *Parameters);
+	
+				RHICmdList.SetStreamSource(0, GRectangleVertexBuffer.VertexBufferRHI, 0);
+	
+				RHICmdList.DrawIndexedPrimitive(
+					GRectangleIndexBuffer.IndexBufferRHI,
+					/*BaseVertexIndex=*/0,
+					/*MinIndex=*/0,
+					/*NumVertices=*/GRectangleVertexBuffer.VertexNum,
+					/*StartIndex=*/0,
+					/*NumPrimitives=*/GRectangleIndexBuffer.PrimitiveNum,
+					/*NumInstances=*/1);
+			}
+		);
+	}
+	else if(Type == OutRTType::TangentWS)
+	{
+		GraphBuilder.AddPass(RDG_EVENT_NAME("RDGDraw"),Parameters,ERDGPassFlags::Raster,
+		[Parameters, VertexShader, PixelShader_Tangent, GlobalShaderMap](FRHICommandList &RHICmdList)
+			{
+				FRHITexture2D *RT = Parameters->RenderTargets[0].GetTexture()->GetRHI()->GetTexture2D();
+				RHICmdList.SetViewport(0, 0, 0.0f, RT->GetSizeX(), RT->GetSizeY(), 1.0f);
+	
+				FGraphicsPipelineStateInitializer GraphicsPSOInit;
+				RHICmdList.ApplyCachedRenderTargets(GraphicsPSOInit);
+				GraphicsPSOInit.DepthStencilState = TStaticDepthStencilState<false, CF_Always>::GetRHI();
+				GraphicsPSOInit.BlendState = TStaticBlendState<>::GetRHI();
+				GraphicsPSOInit.RasterizerState = TStaticRasterizerState<>::GetRHI();
+				GraphicsPSOInit.PrimitiveType = PT_TriangleList;
+				GraphicsPSOInit.BoundShaderState.VertexDeclarationRHI = GTextureVertexDeclaration.VertexDeclarationRHI;
+	
+				GraphicsPSOInit.BoundShaderState.VertexShaderRHI = VertexShader.GetVertexShader();
+				GraphicsPSOInit.BoundShaderState.PixelShaderRHI = PixelShader_Tangent.GetPixelShader();
+				
+				SetGraphicsPipelineState(RHICmdList, GraphicsPSOInit,0);
+				RHICmdList.SetStencilRef(0);
+				
+				SetShaderParameters(RHICmdList, VertexShader, VertexShader.GetVertexShader(), *Parameters);
+				SetShaderParameters(RHICmdList, PixelShader_Tangent, PixelShader_Tangent.GetPixelShader(), *Parameters);
+	
+				RHICmdList.SetStreamSource(0, GRectangleVertexBuffer.VertexBufferRHI, 0);
+	
+				RHICmdList.DrawIndexedPrimitive(
+					GRectangleIndexBuffer.IndexBufferRHI,
+					/*BaseVertexIndex=*/0,
+					/*MinIndex=*/0,
+					/*NumVertices=*/GRectangleVertexBuffer.VertexNum,
+					/*StartIndex=*/0,
+					/*NumPrimitives=*/GRectangleIndexBuffer.PrimitiveNum,
+					/*NumInstances=*/1);
+			}
+		);
+	}
+	else
+	{
+		GraphBuilder.AddPass(RDG_EVENT_NAME("RDGDraw"),Parameters,ERDGPassFlags::Raster,
+		[Parameters, VertexShader, PixelShader_Position, GlobalShaderMap](FRHICommandList &RHICmdList)
+			{
+				FRHITexture2D *RT = Parameters->RenderTargets[0].GetTexture()->GetRHI()->GetTexture2D();
+				RHICmdList.SetViewport(0, 0, 0.0f, RT->GetSizeX(), RT->GetSizeY(), 1.0f);
+	
+				FGraphicsPipelineStateInitializer GraphicsPSOInit;
+				RHICmdList.ApplyCachedRenderTargets(GraphicsPSOInit);
+				GraphicsPSOInit.DepthStencilState = TStaticDepthStencilState<false, CF_Always>::GetRHI();
+				GraphicsPSOInit.BlendState = TStaticBlendState<>::GetRHI();
+				GraphicsPSOInit.RasterizerState = TStaticRasterizerState<>::GetRHI();
+				GraphicsPSOInit.PrimitiveType = PT_TriangleList;
+				GraphicsPSOInit.BoundShaderState.VertexDeclarationRHI = GTextureVertexDeclaration.VertexDeclarationRHI;
+	
+				GraphicsPSOInit.BoundShaderState.VertexShaderRHI = VertexShader.GetVertexShader();
+				GraphicsPSOInit.BoundShaderState.PixelShaderRHI = PixelShader_Position.GetPixelShader();
+				
+				SetGraphicsPipelineState(RHICmdList, GraphicsPSOInit,0);
+				RHICmdList.SetStencilRef(0);
+				
+				SetShaderParameters(RHICmdList, VertexShader, VertexShader.GetVertexShader(), *Parameters);
+				SetShaderParameters(RHICmdList, PixelShader_Position, PixelShader_Position.GetPixelShader(), *Parameters);
+	
+				RHICmdList.SetStreamSource(0, GRectangleVertexBuffer.VertexBufferRHI, 0);
+	
+				RHICmdList.DrawIndexedPrimitive(
+					GRectangleIndexBuffer.IndexBufferRHI,
+					/*BaseVertexIndex=*/0,
+					/*MinIndex=*/0,
+					/*NumVertices=*/GRectangleVertexBuffer.VertexNum,
+					/*StartIndex=*/0,
+					/*NumPrimitives=*/GRectangleIndexBuffer.PrimitiveNum,
+					/*NumInstances=*/1);
+			}
+		);
+	}
 
 	GraphBuilder.QueueTextureExtraction(RDGRenderTarget, &PooledRenderTarget);
 	GraphBuilder.Execute();
-
-	//Copy Result To RenderTarget Asset
-	RHIImmCmdList.CopyTexture(PooledRenderTarget->GetRenderTargetItem().ShaderResourceTexture, RenderTargetRHI->GetTexture2D(), FRHICopyTextureInfo());
+	RHIImmCmdList.CopyTexture(PooledRenderTarget->GetRenderTargetItem().ShaderResourceTexture, RTRHI->GetTexture2D(), FRHICopyTextureInfo());//Copy Result To RenderTarget Asset
 }
