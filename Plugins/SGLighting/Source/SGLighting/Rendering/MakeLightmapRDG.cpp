@@ -32,7 +32,6 @@ void UMakeLightmapBlueprintLibrary::UseRDGDraw(const UObject* WorldContextObject
 {
 	check(IsInGameThread());
 
-	//两张texture
 	FTexture2DRHIRef positionRT = Output_Position_RT->GameThread_GetRenderTargetResource()->GetRenderTargetTexture();
 	FTexture2DRHIRef normalRT = Output_Normal_RT->GameThread_GetRenderTargetResource()->GetRenderTargetTexture();
 	FTexture2DRHIRef tangentRT = Output_Tangent_RT->GameThread_GetRenderTargetResource()->GetRenderTargetTexture();

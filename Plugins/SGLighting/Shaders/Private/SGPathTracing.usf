@@ -1,0 +1,30 @@
+#include "/Engine/Public/Platform.ush"
+#include "/Engine/Private/Common.ush"  
+ 
+RWTexture2D<float4> OutTexture;  
+Texture2D InPosition;
+SamplerState InPositionSampler;
+Texture2D InNormal;
+SamplerState InNormalSampler;
+Texture2D InTangent;
+SamplerState InTangentSampler;
+
+[numthreads(32, 32, 1)]
+void MainCS(uint3 ThreadId : SV_DispatchThreadID)
+{
+	float sizeX, sizeY;
+	OutTexture.GetDimensions(sizeX, sizeY);
+	float2 iResolution = float2(sizeX, sizeY);
+	float2 uv = (ThreadId.xy / iResolution.xy);//get uv
+
+	float3 pos = InPosition.Sample(InPositionSampler, uv).xyz;//pos ws
+	float3 normal = InNormal.Sample(InNormalSampler, uv).xyz;//normal ws
+	float3 tangent = InTangent.Sample(InTangentSampler, uv).xyz;//tangent ws
+	float3 binormal = cross(normal, tangent);//binormal ws
+	float3x3 tbn_line = float3x3(tangent, normal, binormal);
+	float3x3 tbn_row = transpose(tbn_line);//tangent space -> world space
+
+	float3 rayDir = float3(0, 0, 1);//先将方向都设置为垂直表面
+	
+	OutTexture[ThreadId.xy] = float4(pos, 1.0);
+}
