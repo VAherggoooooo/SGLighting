@@ -34,6 +34,9 @@ public:
 		SHADER_PARAMETER_TEXTURE(Texture2D, InTangent)
 		SHADER_PARAMETER_SAMPLER(SamplerState, InTangentSampler)
 
+		SHADER_PARAMETER_RDG_BUFFER_SRV(StructuredBuffer<FMeshTriangle>, TriangleBuffer)
+		SHADER_PARAMETER(int, TriangleNum)
+
 	END_SHADER_PARAMETER_STRUCT()
 
 	static bool ShouldCompilePermutation(const FGlobalShaderPermutationParameters &Parameters)

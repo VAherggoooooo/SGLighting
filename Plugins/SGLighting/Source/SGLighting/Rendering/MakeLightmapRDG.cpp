@@ -32,6 +32,7 @@ void UMakeLightmapBlueprintLibrary::UseRDGDraw(const UObject* WorldContextObject
 {
 	check(IsInGameThread());
 
+	//两张texture
 	FTexture2DRHIRef positionRT = Output_Position_RT->GameThread_GetRenderTargetResource()->GetRenderTargetTexture();
 	FTexture2DRHIRef normalRT = Output_Normal_RT->GameThread_GetRenderTargetResource()->GetRenderTargetTexture();
 	FTexture2DRHIRef tangentRT = Output_Tangent_RT->GameThread_GetRenderTargetResource()->GetRenderTargetTexture();
@@ -157,6 +158,9 @@ void DrawToRT(FRHICommandListImmediate &RHIImmCmdList, FTexture2DRHIRef RTRHI, O
 	UE::Math::TMatrix<float> M_Matrix = GRectangleVertexBuffer.GetMMatrix();
 	Parameters->M_Matrix = FMatrix44f(M_Matrix);
 	Parameters->M_Matrix_Invers_Trans = FMatrix44f(M_Matrix.Inverse().GetTransposed());
+	FRDGBufferRef TriBuffer = CreateStructuredBuffer(GraphBuilder, TEXT("TriangleDataBuffer"), GRectangleVertexBuffer.SceneMeshTriangles,ERDGInitialDataFlags::NoCopy);//GRectangleVertexBuffer.MeshTriangles
+	Parameters->TriangleBuffer = GraphBuilder.CreateSRV(TriBuffer);
+	Parameters->TriangleNum = GRectangleVertexBuffer.SceneMeshTriangles.Num();
 	
 	//get shader
 	const ERHIFeatureLevel::Type FeatureLevel = GMaxRHIFeatureLevel; //ERHIFeatureLevel::SM5

@@ -23,7 +23,7 @@ enum OutRTType
 };
 
 //blurprint node 函数作为起点
-UCLASS(MinimalAPI, meta = (ScriptName = "SG Lighting"))
+UCLASS(MinimalAPI, meta = (ScriptName = "SimpleRenderingExample"))
 class UMakeLightmapBlueprintLibrary : public UBlueprintFunctionLibrary
 {
 	GENERATED_BODY()
@@ -71,6 +71,7 @@ class FRectangleVertexBuffer : public FVertexBuffer
 // 	UBVHData* BVHData;
 public:
 	int32 VertexNum = 0;
+	TArray<FMeshTriangle> SceneMeshTriangles;
 	
 	/** Initialize the RHI for this rendering resource */
 	void InitRHI() override
@@ -89,7 +90,7 @@ public:
 
 		VertexNum = BVHData->VerticeIDs.Num();
 		Vertices.SetNumUninitialized(VertexNum);
-
+		SceneMeshTriangles = BVHData->Triangles;
 		
 		
 		
@@ -237,6 +238,8 @@ public:
 	BEGIN_SHADER_PARAMETER_STRUCT(FParameters, )
 		SHADER_PARAMETER(FMatrix44f, M_Matrix)
 		SHADER_PARAMETER(FMatrix44f, M_Matrix_Invers_Trans)
+		SHADER_PARAMETER_RDG_BUFFER_SRV(StructuredBuffer<FMeshTriangle>, TriangleBuffer)
+		SHADER_PARAMETER(int, TriangleNum)
 		RENDER_TARGET_BINDING_SLOTS()
 	END_SHADER_PARAMETER_STRUCT()
 

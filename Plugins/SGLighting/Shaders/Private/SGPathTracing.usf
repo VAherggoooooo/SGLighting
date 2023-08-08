@@ -1,5 +1,11 @@
 #include "/Engine/Public/Platform.ush"
-#include "/Engine/Private/Common.ush"  
+#include "/Engine/Private/Common.ush"
+
+#define RAY_STEP 0.1
+#define RAY_MINTIME -1000
+#define RAY_MAXTIME 10000000000000
+#define RAY_MAX_DISTANCE 1000000
+
  
 RWTexture2D<float4> OutTexture;  
 Texture2D InPosition;
@@ -8,6 +14,146 @@ Texture2D InNormal;
 SamplerState InNormalSampler;
 Texture2D InTangent;
 SamplerState InTangentSampler;
+int TriangleNum;
+
+
+struct FMeshTriangle
+{
+	float3 A;
+	float3 B;
+	float3 C;
+};
+
+StructuredBuffer<FMeshTriangle> TriangleBuffer;
+
+struct Ray
+{
+	float3 ori;
+	float3 curPos;
+	float3 dir;
+	float2 uv;
+};
+
+struct HitInfo
+{
+	float3 pos;
+	float3 normal;
+	float2 uv;
+	float3 color;
+	float hitTime;
+	bool didHit;
+};
+
+
+
+HitInfo GetHitInfo(float3 _pos, float3 _normal, float2 _uv, float3 _color, float _hitTime)
+{
+	HitInfo outInfo;
+	outInfo.pos = _pos;
+	outInfo.normal = _normal;
+	outInfo.uv = _uv;
+	outInfo.color = _color;
+	outInfo.hitTime = _hitTime;
+	outInfo.didHit = false;
+	return outInfo;
+}
+
+Ray GetRay(float3 _ori, float3 _dir, float2 _uv)
+{
+	Ray r;
+	r.ori = _ori;
+	r.dir = _dir;
+	r.uv = _uv;
+	return r;
+}
+
+struct Material
+{
+	float3 albedo;
+	float3 emissive;
+};
+
+HitInfo HitChecke(Ray _ray)
+{
+
+	HitInfo outInfo = GetHitInfo(_ray.ori, 0, _ray.uv, 0, RAY_MAXTIME + 5);
+	for(int i = 0; i < TriangleNum; i++)
+	{
+		FMeshTriangle t = TriangleBuffer[i];
+		float3 normalFace = cross(t.B - t.A, t.C - t.B);
+		//if(dot(normalFace, _ray.dir) > 0) continue;//反面
+	
+		float hitTime = dot((t.A - _ray.ori), normalFace) / dot(_ray.dir, normalFace);
+		if(hitTime < 0 || hitTime > RAY_MAXTIME)
+			continue;
+	
+		float3 hitPos = hitTime * _ray.dir + _ray.ori;
+		float3 pa = hitPos - t.A;
+		float3 pb = hitPos - t.B;
+		float3 pc = hitPos - t.C;
+		float3 ba = t.B - t.A;
+		float3 cb = t.C - t.B;
+		float3 ac = t.A - t.C;
+	
+		float3 crs1 = cross(pa, ba);
+		float3 crs2 = cross(pb, cb);
+		float3 crs3 = cross(pc, ac);
+		// if((sign(crs1) == sign(crs2)) && (sign(crs2) == sign(crs3)))
+		// {
+		// 	outInfo.didHit = true;
+		// }
+		if((dot(crs1, crs2) >= 0) && (dot(crs3, crs2) >= 0))
+		{
+			outInfo.didHit = true;
+			//return outInfo;
+		}
+		else
+		{
+			//outInfo.didHit = true;
+		}
+		
+		//outInfo.didHit = true;
+		// float3 edgeAB = t.B - t.A;
+		// float3 edgeAC = t.C - t.A;
+		// float3 normalVector = cross(edgeAB, edgeAC);
+		// float3 ao = _ray.ori - t.A;
+		// float3 dao = cross(ao, _ray.dir);
+		//
+		// float determinant = -dot(_ray.dir, normalVector);
+		// float invDet = 1 / determinant;
+		//
+		// float dst = dot(ao, normalVector) * invDet;
+		// float u = dot(edgeAC, dao) * invDet;
+		// float v = -dot(edgeAB, dao) * invDet;
+		// float w = 1 - u - v;
+		//
+		// if(determinant >= 1E-6 && dst >= 0 && u >= 0 && v >= 0 && w >=0)
+		// if(dst < RAY_MAXTIME && dst < outInfo.hitTime)
+		// {
+		// 	outInfo.didHit = true;
+		// 	outInfo.hitTime = dst;
+		// }
+		//outInfo.didHit = true;
+		//三角形与射线相交检测 if hitTime < 0: return
+		//else 循环找最小t 返回相交材质的颜色
+	}
+
+	
+	
+	return outInfo;
+}
+
+float3 PathTracingShading(Ray _ray)
+{
+	// float rr = RandFast(_ray.uv);//轮盘赌
+	// if(rr < 0.3)
+	// 	return 0;
+
+	HitInfo info = HitChecke(_ray);
+	if(info.didHit)return 1;
+	
+	return 0;
+}
 
 [numthreads(32, 32, 1)]
 void MainCS(uint3 ThreadId : SV_DispatchThreadID)
@@ -17,6 +163,12 @@ void MainCS(uint3 ThreadId : SV_DispatchThreadID)
 	float2 iResolution = float2(sizeX, sizeY);
 	float2 uv = (ThreadId.xy / iResolution.xy);//get uv
 
+	if(InPosition.Sample(InPositionSampler, uv).w <= 0.5)
+	{
+		OutTexture[ThreadId.xy] = 0;
+		return;
+	}
+	
 	float3 pos = InPosition.Sample(InPositionSampler, uv).xyz;//pos ws
 	float3 normal = InNormal.Sample(InNormalSampler, uv).xyz;//normal ws
 	float3 tangent = InTangent.Sample(InTangentSampler, uv).xyz;//tangent ws
@@ -24,7 +176,10 @@ void MainCS(uint3 ThreadId : SV_DispatchThreadID)
 	float3x3 tbn_line = float3x3(tangent, normal, binormal);
 	float3x3 tbn_row = transpose(tbn_line);//tangent space -> world space
 
-	float3 rayDir = float3(0, 0, 1);//先将方向都设置为垂直表面
+	Ray ray = GetRay(pos + normal * 0.01, normalize(float3(1,0,0.3)), uv);
+	//HitInfo hitInfo = HitChecke(ray);
+	float3 color = PathTracingShading(ray);
 	
-	OutTexture[ThreadId.xy] = float4(pos, 1.0);
+	OutTexture[ThreadId.xy] = float4(color, 1.0);
 }
+

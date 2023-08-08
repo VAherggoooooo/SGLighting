@@ -45,7 +45,7 @@ int32 UBVHData::GetTrangleNum(bool bPrintNum, bool bPrintSM, bool bStatic) const
 	return trangleNum;
 }
 
-void UBVHData::GetAllMeshInfo(TArray<FVector>& _Vertices, TArray<FVector3f>& _Position, TArray<int32>& _Triangles, TArray<FVector>& _Normals, TArray<FVector2D>& _UVs, TArray<FVector2D>& _UVs2, TArray<FProcMeshTangent>& _Tangents)
+void UBVHData::GetAllMeshInfo(TArray<FVector>& _Vertices, TArray<FVector3f>& _Position, TArray<int32>& _VertexIDs, TArray<FVector>& _Normals, TArray<FVector2D>& _UVs, TArray<FVector2D>& _UVs2, TArray<FProcMeshTangent>& _Tangents, TArray<FMeshTriangle>& _Triangles)
 {
 	if(MeshCollecter == nullptr) return;
 	TArray<UStaticMesh*> staticMeshes = MeshCollecter->GetAllStaticMeshesInLevel();
@@ -86,13 +86,23 @@ void UBVHData::GetAllMeshInfo(TArray<FVector>& _Vertices, TArray<FVector3f>& _Po
 			}
 		
 			_Vertices.Append(v);
-			_Triangles.Append(tri);
+			_VertexIDs.Append(tri);
 			_Normals.Append(n);
 			_UVs.Append(uv);
 			_UVs2.Append(uv2);
 			_Position.Append(p);
 			_Tangents.Append(tan);
 
+			TArray<FMeshTriangle> trian;
+			for(int id = 0; id < _VertexIDs.Num(); id += 3)
+			{
+				FVector3f A =  _Position[_VertexIDs[id]];
+				FVector3f B =  _Position[_VertexIDs[id + 1]];
+				FVector3f C =  _Position[_VertexIDs[id + 2]];
+				trian.Add(FMeshTriangle(A,B,C));
+			}
+			_Triangles.Append(trian);
+			
 		}
 	}
 }
@@ -100,7 +110,7 @@ void UBVHData::GetAllMeshInfo(TArray<FVector>& _Vertices, TArray<FVector3f>& _Po
 void UBVHData::GetSceneData()
 {
 	ClearSceneData();
-	GetAllMeshInfo(VerticeIDs,VerticePositions, TriangleVertexIDs, Normals, UVs, UVs2, Tangents);
+	GetAllMeshInfo(VerticeIDs,VerticePositions, TriangleVertexIDs, Normals, UVs, UVs2, Tangents, Triangles);
 
 	//UE_LOG(LogTemp, Warning, TEXT("vNum: %d"), VerticeIDs.Num());
 	//UE_LOG(LogTemp, Warning, TEXT("posNum: %d"), VerticePositions.Num());
@@ -111,6 +121,8 @@ void UBVHData::GetSceneData()
 
 	// for (int32 i = 0; i < TriangleVertexIDs.Num(); i++)
 	// 	UE_LOG(LogTemp, Warning, TEXT("triID: %d"), TriangleVertexIDs[i]);
+
+	//UE_LOG(LogTemp, Warning, TEXT("triannum: %d"), Triangles.Num());
 }
 
 void UBVHData::ClearSceneData()

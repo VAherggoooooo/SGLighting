@@ -1,5 +1,6 @@
 #include "SGPathTracing.h"
 
+#include "MakeLightmapRDG.h"
 #include "RenderGraphBuilder.h"
 #include "RenderGraphUtils.h"
 #include "Engine/TextureRenderTarget2D.h"
@@ -50,6 +51,10 @@ void ComputePathTracing(FRHICommandListImmediate &RHIImmCmdList, FTexture2DRHIRe
 	Parameters->InNormalSampler = TStaticSamplerState<SF_Trilinear, AM_Clamp, AM_Clamp, AM_Clamp>::GetRHI();
 	Parameters->InTangent = Tangent_RT;
 	Parameters->InTangentSampler = TStaticSamplerState<SF_Trilinear, AM_Clamp, AM_Clamp, AM_Clamp>::GetRHI();
+
+	FRDGBufferRef TriBuffer = CreateStructuredBuffer(GraphBuilder, TEXT("TriangleDataBuffer"), GRectangleVertexBuffer.SceneMeshTriangles,ERDGInitialDataFlags::NoCopy);//GRectangleVertexBuffer.MeshTriangles
+	Parameters->TriangleBuffer = GraphBuilder.CreateSRV(TriBuffer);
+	Parameters->TriangleNum = GRectangleVertexBuffer.SceneMeshTriangles.Num();
 
 	//Get ComputeShader From GlobalShaderMap
 	const ERHIFeatureLevel::Type FeatureLevel = GMaxRHIFeatureLevel; //ERHIFeatureLevel::SM5

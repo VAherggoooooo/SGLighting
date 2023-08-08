@@ -8,6 +8,24 @@
 /**
  * 
  */
+
+struct FMeshTriangle
+{
+	//A -> B -> C
+	//face direction: cross(B-A, C-B)
+	FVector3f A;
+	FVector3f B;
+	FVector3f C;
+
+	FMeshTriangle(){A = FVector3f(); B = FVector3f(); C = FVector3f();}
+	FMeshTriangle(FVector3f _A, FVector3f _B, FVector3f _C)
+	{
+		A = _A;
+		B = _B;
+		C = _C;
+	}
+};
+
 struct FProcMeshTangent;
 UCLASS()
 class SGLIGHTING_API UBVHData : public UObject
@@ -25,11 +43,12 @@ public:
 	void GetAllMeshInfo(
 		TArray<FVector>& _Vertices,
 		TArray<FVector3f>& _Position,
-		TArray<int32>& _Triangles,
+		TArray<int32>& _VertexIDs,
 		TArray<FVector>& _Normals,
 		TArray<FVector2D>& _UVs,
 		TArray<FVector2D>& _UVs2,
-		TArray<FProcMeshTangent>& _Tangents);
+		TArray<FProcMeshTangent>& _Tangents,
+		TArray<FMeshTriangle>& _Triangles);
 	void GetSceneData();
 	void ClearSceneData();
 	
@@ -43,4 +62,5 @@ public:
 	TArray<FVector> Normals;
 	TArray<FVector2D> UVs, UVs2;
 	TArray<FProcMeshTangent> Tangents;
+	TArray<FMeshTriangle> Triangles;//三角形列表
 };
