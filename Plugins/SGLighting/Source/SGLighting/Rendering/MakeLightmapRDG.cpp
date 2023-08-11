@@ -158,9 +158,7 @@ void DrawToRT(FRHICommandListImmediate &RHIImmCmdList, FTexture2DRHIRef RTRHI, O
 	UE::Math::TMatrix<float> M_Matrix = GRectangleVertexBuffer.GetMMatrix();
 	Parameters->M_Matrix = FMatrix44f(M_Matrix);
 	Parameters->M_Matrix_Invers_Trans = FMatrix44f(M_Matrix.Inverse().GetTransposed());
-	FRDGBufferRef TriBuffer = CreateStructuredBuffer(GraphBuilder, TEXT("TriangleDataBuffer"), GRectangleVertexBuffer.SceneMeshTriangles,ERDGInitialDataFlags::NoCopy);//GRectangleVertexBuffer.MeshTriangles
-	Parameters->TriangleBuffer = GraphBuilder.CreateSRV(TriBuffer);
-	Parameters->TriangleNum = GRectangleVertexBuffer.SceneMeshTriangles.Num();
+
 	
 	//get shader
 	const ERHIFeatureLevel::Type FeatureLevel = GMaxRHIFeatureLevel; //ERHIFeatureLevel::SM5

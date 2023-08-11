@@ -1,0 +1,52 @@
+﻿  PCH.cpp
+  App.cpp
+  Assert.cpp
+  FileIO.cpp
+  Camera.cpp
+  DDSTextureLoader.cpp
+  DeviceManager.cpp
+  DeviceStates.cpp
+  DXErr.cpp
+  GraphicsTypes.cpp
+  Model.cpp
+  PostProcessorBase.cpp
+  Profiler.cpp
+  Sampling.cpp
+  SDKMesh.cpp
+  SH.cpp
+  ShaderCompilation.cpp
+  Skybox.cpp
+  Spectrum.cpp
+  SpriteFont.cpp
+  SpriteRenderer.cpp
+  Textures.cpp
+  WICTextureLoader.cpp
+  ArHosekSkyModel.cpp
+  Input.cpp
+F:\BakingLab-master\SampleFramework11\v1.02\Graphics\Sampling.h(1,1): error C2220: 以下警告被视为错误 (编译源文件 ..\SampleFramework11\v1.02\Graphics\Sampling.cpp)
+F:\BakingLab-master\SampleFramework11\v1.02\Graphics\Sampling.h(1,1): warning C4819: 该文件包含不能在当前代码页(936)中表示的字符。请将该文件保存为 Unicode 格式以防止数据丢失 (编译源文件 ..\SampleFramework11\v1.02\Graphics\Sampling.cpp)
+  MurmurHash.cpp
+  Settings.cpp
+  SF11_Math.cpp
+  Timer.cpp
+  TinyEXR.cpp
+  TwHelper.cpp
+  Utility.cpp
+  Window.cpp
+  MeshBaker.cpp
+  MeshRenderer.cpp
+  AppSettings.cpp
+  BakingLab.cpp
+  PathTracer.cpp
+  PostProcessor.cpp
+  SG.cpp
+F:\BakingLab-master\SampleFramework11\v1.02\Graphics\Sampling.h(1,1): error C2220: 以下警告被视为错误 (编译源文件 AppSettings.cpp)
+F:\BakingLab-master\SampleFramework11\v1.02\Graphics\Sampling.h(1,1): warning C4819: 该文件包含不能在当前代码页(936)中表示的字符。请将该文件保存为 Unicode 格式以防止数据丢失 (编译源文件 AppSettings.cpp)
+F:\BakingLab-master\SampleFramework11\v1.02\Graphics\Sampling.h(1,1): error C2220: 以下警告被视为错误 (编译源文件 BakingLab.cpp)
+F:\BakingLab-master\SampleFramework11\v1.02\Graphics\Sampling.h(1,1): warning C4819: 该文件包含不能在当前代码页(936)中表示的字符。请将该文件保存为 Unicode 格式以防止数据丢失 (编译源文件 BakingLab.cpp)
+F:\BakingLab-master\SampleFramework11\v1.02\Graphics\Sampling.h(1,1): error C2220: 以下警告被视为错误 (编译源文件 PathTracer.cpp)
+F:\BakingLab-master\SampleFramework11\v1.02\Graphics\Sampling.h(1,1): warning C4819: 该文件包含不能在当前代码页(936)中表示的字符。请将该文件保存为 Unicode 格式以防止数据丢失 (编译源文件 PathTracer.cpp)
+F:\BakingLab-master\SampleFramework11\v1.02\Graphics\Sampling.h(1,1): error C2220: 以下警告被视为错误 (编译源文件 MeshBaker.cpp)
+F:\BakingLab-master\SampleFramework11\v1.02\Graphics\Sampling.h(1,1): warning C4819: 该文件包含不能在当前代码页(936)中表示的字符。请将该文件保存为 Unicode 格式以防止数据丢失 (编译源文件 MeshBaker.cpp)
+F:\BakingLab-master\SampleFramework11\v1.02\Graphics\Sampling.h(1,1): error C2220: 以下警告被视为错误 (编译源文件 SG.cpp)
+F:\BakingLab-master\SampleFramework11\v1.02\Graphics\Sampling.h(1,1): warning C4819: 该文件包含不能在当前代码页(936)中表示的字符。请将该文件保存为 Unicode 格式以防止数据丢失 (编译源文件 SG.cpp)

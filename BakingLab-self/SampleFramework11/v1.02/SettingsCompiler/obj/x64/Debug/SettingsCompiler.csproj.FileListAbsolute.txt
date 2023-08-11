@@ -18,3 +18,13 @@ F:\BakingLab-self\SampleFramework11\v1.02\SettingsCompiler\obj\x64\Debug\Setting
 F:\BakingLab-self\SampleFramework11\v1.02\SettingsCompiler\obj\x64\Debug\SettingsCompiler.csproj.CopyComplete
 F:\BakingLab-self\SampleFramework11\v1.02\SettingsCompiler\obj\x64\Debug\SettingsCompiler.exe
 F:\BakingLab-self\SampleFramework11\v1.02\SettingsCompiler\obj\x64\Debug\SettingsCompiler.pdb
+F:\UE_Project\SGLighting\BakingLab-self\SampleFramework11\v1.02\SettingsCompiler\bin\x64\Debug\SettingsCompiler.exe.config
+F:\UE_Project\SGLighting\BakingLab-self\SampleFramework11\v1.02\SettingsCompiler\bin\x64\Debug\SettingsCompiler.exe
+F:\UE_Project\SGLighting\BakingLab-self\SampleFramework11\v1.02\SettingsCompiler\bin\x64\Debug\SettingsCompiler.pdb
+F:\UE_Project\SGLighting\BakingLab-self\SampleFramework11\v1.02\SettingsCompiler\bin\x64\Debug\SettingsCompilerAttributes.dll
+F:\UE_Project\SGLighting\BakingLab-self\SampleFramework11\v1.02\SettingsCompiler\bin\x64\Debug\SettingsCompilerAttributes.pdb
+F:\UE_Project\SGLighting\BakingLab-self\SampleFramework11\v1.02\SettingsCompiler\obj\x64\Debug\SettingsCompiler.csproj.AssemblyReference.cache
+F:\UE_Project\SGLighting\BakingLab-self\SampleFramework11\v1.02\SettingsCompiler\obj\x64\Debug\SettingsCompiler.csproj.CoreCompileInputs.cache
+F:\UE_Project\SGLighting\BakingLab-self\SampleFramework11\v1.02\SettingsCompiler\obj\x64\Debug\SettingsCompiler.csproj.CopyComplete
+F:\UE_Project\SGLighting\BakingLab-self\SampleFramework11\v1.02\SettingsCompiler\obj\x64\Debug\SettingsCompiler.exe
+F:\UE_Project\SGLighting\BakingLab-self\SampleFramework11\v1.02\SettingsCompiler\obj\x64\Debug\SettingsCompiler.pdb

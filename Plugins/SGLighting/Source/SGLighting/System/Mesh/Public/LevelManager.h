@@ -19,6 +19,7 @@ public:
 	virtual UBVHData* GetBVHData() const { return BVHData == nullptr? nullptr:BVHData; } 
 	virtual ULightmapCollect* GetLightmapCollect() const { return LightmapCollect == nullptr? nullptr:LightmapCollect; } 
 private:
+	//TODO: 收集多个物体, 多个材质
 	UMeshCollecter* MeshCollecter;
 	UBVHData* BVHData;
 	ULightmapCollect* LightmapCollect;

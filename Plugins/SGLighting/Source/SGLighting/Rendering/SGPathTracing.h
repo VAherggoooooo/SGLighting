@@ -10,11 +10,11 @@ class USGPathTracing : public UBlueprintFunctionLibrary
 	GENERATED_BODY()
 	
 	UFUNCTION(BlueprintCallable, Category = "SG Lightmap", meta = (WorldContext = "WorldContextObject"))
-	static void PathTracingInLightmap(const UObject* WorldContextObject, UTextureRenderTarget2D* OutputRT, UTextureRenderTarget2D* Position_RT, UTextureRenderTarget2D* Normal_RT, UTextureRenderTarget2D* Tangent_RT);
+	static void PathTracingInLightmap(const UObject* WorldContextObject, UTextureRenderTarget2D* OutputRT, UTextureRenderTarget2D* Position_RT, UTextureRenderTarget2D* Normal_RT, UTextureRenderTarget2D* Tangent_RT, ADirectionalLight* MainLight, uint8 SampleCount = 200, uint8 depth = 6);
 };
 
 
-void ComputePathTracing(FRHICommandListImmediate &RHIImmCmdList, FTexture2DRHIRef RenderTargetRHI, FTexture2DRHIRef Position_RT, FTexture2DRHIRef Normal_RT, FTexture2DRHIRef Tangent_RT);
+void ComputePathTracing(FRHICommandListImmediate &RHIImmCmdList, FTexture2DRHIRef RenderTargetRHI, FTexture2DRHIRef Position_RT, FTexture2DRHIRef Normal_RT, FTexture2DRHIRef Tangent_RT, ADirectionalLight* MainLight, uint8 SampleCount, uint8 depth);
 
 
 class FSGComputeShader_PT : public FGlobalShader
@@ -36,7 +36,12 @@ public:
 
 		SHADER_PARAMETER_RDG_BUFFER_SRV(StructuredBuffer<FMeshTriangle>, TriangleBuffer)
 		SHADER_PARAMETER(int, TriangleNum)
+	
+		SHADER_PARAMETER(int, SampleCount)
+		SHADER_PARAMETER(int, depth)
 
+		SHADER_PARAMETER_RDG_BUFFER_SRV(StructuredBuffer<FMainLight>, MainLightBuffer)
+	
 	END_SHADER_PARAMETER_STRUCT()
 
 	static bool ShouldCompilePermutation(const FGlobalShaderPermutationParameters &Parameters)

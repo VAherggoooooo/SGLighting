@@ -3,6 +3,7 @@
 #include "MakeLightmapRDG.h"
 #include "RenderGraphBuilder.h"
 #include "RenderGraphUtils.h"
+#include "Components/LightComponent.h"
 #include "Engine/TextureRenderTarget2D.h"
 
 
@@ -11,7 +12,8 @@ IMPLEMENT_GLOBAL_SHADER(FSGComputeShader_PT, "/Plugins/SGLighting/Private/SGPath
 
 
 void USGPathTracing::PathTracingInLightmap(const UObject* WorldContextObject, UTextureRenderTarget2D* OutputRT, UTextureRenderTarget2D* Position_RT,
-	UTextureRenderTarget2D* Normal_RT, UTextureRenderTarget2D* Tangent_RT)
+	UTextureRenderTarget2D* Normal_RT, UTextureRenderTarget2D* Tangent_RT, ADirectionalLight* MainLight
+	, uint8 SampleCount, uint8 depth)
 {
 	check(IsInGameThread());
 
@@ -22,14 +24,14 @@ void USGPathTracing::PathTracingInLightmap(const UObject* WorldContextObject, UT
 
 	ENQUEUE_RENDER_COMMAND(CaptureCommand)
 	(
-		[RenderTargetRHI, positionRT, normalRT, tangentRT](FRHICommandListImmediate &RHICmdList)
+		[RenderTargetRHI, positionRT, normalRT, tangentRT, MainLight, SampleCount, depth](FRHICommandListImmediate &RHICmdList)
 		{
-			ComputePathTracing(RHICmdList, RenderTargetRHI, positionRT, normalRT, tangentRT);
+			ComputePathTracing(RHICmdList, RenderTargetRHI, positionRT, normalRT, tangentRT, MainLight, SampleCount, depth);
 		}
 	);
 }
 
-void ComputePathTracing(FRHICommandListImmediate &RHIImmCmdList, FTexture2DRHIRef RenderTargetRHI, FTexture2DRHIRef Position_RT, FTexture2DRHIRef Normal_RT, FTexture2DRHIRef Tangent_RT)
+void ComputePathTracing(FRHICommandListImmediate &RHIImmCmdList, FTexture2DRHIRef RenderTargetRHI, FTexture2DRHIRef Position_RT, FTexture2DRHIRef Normal_RT, FTexture2DRHIRef Tangent_RT, ADirectionalLight* MainLight, uint8 SampleCount, uint8 depth)
 {
 	check(IsInRenderingThread());
 
@@ -55,6 +57,15 @@ void ComputePathTracing(FRHICommandListImmediate &RHIImmCmdList, FTexture2DRHIRe
 	FRDGBufferRef TriBuffer = CreateStructuredBuffer(GraphBuilder, TEXT("TriangleDataBuffer"), GRectangleVertexBuffer.SceneMeshTriangles,ERDGInitialDataFlags::NoCopy);//GRectangleVertexBuffer.MeshTriangles
 	Parameters->TriangleBuffer = GraphBuilder.CreateSRV(TriBuffer);
 	Parameters->TriangleNum = GRectangleVertexBuffer.SceneMeshTriangles.Num();
+
+	Parameters->SampleCount = SampleCount;
+	Parameters->depth = depth;
+
+	TArray<FMainLight> MainLights;
+	FMainLight _L = FMainLight(FVector3f(MainLight->GetActorRotation().Vector()),FVector3f(MainLight->GetLightColor()), MainLight->GetLightComponent()->Intensity);
+	MainLights.Add(_L);
+	FRDGBufferRef MainLightBuff = CreateStructuredBuffer(GraphBuilder, TEXT("MainLightDataBuffer"), MainLights,ERDGInitialDataFlags::NoCopy);//GRectangleVertexBuffer.MeshTriangles
+	Parameters->MainLightBuffer = GraphBuilder.CreateSRV(MainLightBuff);
 
 	//Get ComputeShader From GlobalShaderMap
 	const ERHIFeatureLevel::Type FeatureLevel = GMaxRHIFeatureLevel; //ERHIFeatureLevel::SM5

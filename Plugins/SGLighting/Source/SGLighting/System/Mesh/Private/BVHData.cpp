@@ -99,7 +99,10 @@ void UBVHData::GetAllMeshInfo(TArray<FVector>& _Vertices, TArray<FVector3f>& _Po
 				FVector3f A =  _Position[_VertexIDs[id]];
 				FVector3f B =  _Position[_VertexIDs[id + 1]];
 				FVector3f C =  _Position[_VertexIDs[id + 2]];
-				trian.Add(FMeshTriangle(A,B,C));
+				FVector3f NormalA = FVector3f(_Normals[_VertexIDs[id]]);
+				FVector3f NormalB = FVector3f(_Normals[_VertexIDs[id + 1]]);
+				FVector3f NormalC = FVector3f(_Normals[_VertexIDs[id + 2]]);
+				trian.Add(FMeshTriangle(A,B,C, NormalA, NormalB, NormalC));
 			}
 			_Triangles.Append(trian);
 			
@@ -120,9 +123,10 @@ void UBVHData::GetSceneData()
 		//UE_LOG(LogTemp, Warning, TEXT("uv1: (%f, %f) : uv2: (%f, %f)"), UVs[i].X, UVs[i].Y, UVs2[i].X, UVs2[i].Y);
 
 	// for (int32 i = 0; i < TriangleVertexIDs.Num(); i++)
-	// 	UE_LOG(LogTemp, Warning, TEXT("triID: %d"), TriangleVertexIDs[i]);
-
-	//UE_LOG(LogTemp, Warning, TEXT("triannum: %d"), Triangles.Num());
+	// 	UE_LOG(LogTemp, Warning, TEXT("triID: %d   pos: %s"), TriangleVertexIDs[i], *(VerticePositions[TriangleVertexIDs[i]].ToString()));
+	//
+	// for (int32 i = 0; i < Triangles.Num(); i++)
+	// 	UE_LOG(LogTemp, Warning, TEXT("trianPos: %s,  %s,  %s"), *(Triangles[i].A.ToString()), *(Triangles[i].B.ToString()), *(Triangles[i].C.ToString()));
 }
 
 void UBVHData::ClearSceneData()

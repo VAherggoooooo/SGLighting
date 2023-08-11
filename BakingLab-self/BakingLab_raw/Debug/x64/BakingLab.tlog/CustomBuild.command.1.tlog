@@ -1,0 +1,14 @@
+^F:\UE_PROJECT\SGLIGHTING\BAKINGLAB-SELF\BAKINGLAB_RAW\APPSETTINGS.CS
+F:\UE_Project\SGLighting\BakingLab-self\BakingLab_raw\\SettingsCompiler.exe F:\UE_Project\SGLighting\BakingLab-self\BakingLab_raw\AppSettings.cs
+^F:\UE_PROJECT\SGLIGHTING\BAKINGLAB-SELF\EXTERNALS\ANTTWEAKBAR\BIN\ANTTWEAKBAR64.DLL
+copy F:\UE_Project\SGLighting\BakingLab-self\Externals\AntTweakBar\bin\AntTweakBar64.dll F:\UE_Project\SGLighting\BakingLab-self\BakingLab_raw\AntTweakBar64.dll
+^F:\UE_PROJECT\SGLIGHTING\BAKINGLAB-SELF\EXTERNALS\ASSIMP-3.1.1\BIN\ASSIMP.DLL
+copy F:\UE_Project\SGLighting\BakingLab-self\Externals\Assimp-3.1.1\bin\assimp.dll F:\UE_Project\SGLighting\BakingLab-self\BakingLab_raw\assimp.dll
+^F:\UE_PROJECT\SGLIGHTING\BAKINGLAB-SELF\EXTERNALS\D3DCOMPILER_47.DLL
+copy F:\UE_Project\SGLighting\BakingLab-self\Externals\d3dcompiler_47.dll F:\UE_Project\SGLighting\BakingLab-self\BakingLab_raw\d3dcompiler_47.dll
+^F:\UE_PROJECT\SGLIGHTING\BAKINGLAB-SELF\EXTERNALS\EMBREE-2.8\LIB\EMBREE.DLL
+copy F:\UE_Project\SGLighting\BakingLab-self\Externals\Embree-2.8\lib\embree.dll F:\UE_Project\SGLighting\BakingLab-self\BakingLab_raw\embree.dll
+^F:\UE_PROJECT\SGLIGHTING\BAKINGLAB-SELF\EXTERNALS\EMBREE-2.8\LIB\TBB.DLL
+copy F:\UE_Project\SGLighting\BakingLab-self\Externals\Embree-2.8\lib\tbb.dll F:\UE_Project\SGLighting\BakingLab-self\BakingLab_raw\tbb.dll
+^F:\UE_PROJECT\SGLIGHTING\BAKINGLAB-SELF\EXTERNALS\EMBREE-2.8\LIB\TBBMALLOC.DLL
+copy F:\UE_Project\SGLighting\BakingLab-self\Externals\Embree-2.8\lib\tbbmalloc.dll F:\UE_Project\SGLighting\BakingLab-self\BakingLab_raw\tbbmalloc.dll

@@ -263,13 +263,14 @@ Float3 PathTrace(const PathTracerParams& params, Random& randomGenerator, float&
 
     // Keep tracing paths until we reach the specified max
     const int64 maxPathLength = params.MaxPathLength;
-    for(int64 pathLength = 1; pathLength <= maxPathLength || maxPathLength == -1; ++pathLength)
+    for(int64 pathLength = 1; pathLength <= maxPathLength || maxPathLength == -1; ++pathLength)//µ¯Éä
     {
         const bool indirectSpecOnly = params.ViewIndirectSpecular && pathLength == 1;
         const bool indirectDiffuseOnly = params.ViewIndirectDiffuse && pathLength == 1;
         const bool enableSpecular = (params.EnableBounceSpecular || (pathLength == 1)) && params.EnableSpecular;
         const bool enableDiffuse = params.EnableDiffuse;
         const bool skipDirect = AppSettings::ShowGroundTruth && (!AppSettings::EnableDirectLighting || indirectDiffuseOnly) && (pathLength == 1);
+        //const bool skipDirect = false;
 
         // See if we should randomly terminate this path using Russian Roullete     
         const int32 rouletteDepth = params.RussianRouletteDepth;
@@ -280,7 +281,7 @@ Float3 PathTrace(const PathTracerParams& params, Random& randomGenerator, float&
                 break;
             throughput /= continueProbability;
             irrThroughput /= continueProbability;
-        }
+        }//Í¨¹ýÂÖÅÌ¶Ä
 
         // Set this to true to keep the loop going
         bool continueTracing = false;
@@ -357,13 +358,13 @@ Float3 PathTrace(const PathTracerParams& params, Random& randomGenerator, float&
 
             diffuseAlbedo *= enableDiffuse ? 1.0f : 0.0f;
 
-            if(indirectSpecOnly == false)
-            {
+            //if(indirectSpecOnly == false)
+            //{
                 // Compute direct lighting from the sun
                 Float3 directLighting;
                 Float3 directIrradiance;
-                if((AppSettings::EnableDirectLighting || pathLength > 1) && AppSettings::EnableSun)
-                {
+                //if((AppSettings::EnableDirectLighting || pathLength > 1) && AppSettings::EnableSun)
+                //{
                     Float2 sunSample = params.SampleSet->Sun();
                     if(pathLength > 1)
                         sunSample = randomGenerator.RandomFloat2();
@@ -372,87 +373,86 @@ Float3 PathTrace(const PathTracerParams& params, Random& randomGenerator, float&
                                                      sunSample.x, sunSample.y, directIrradiance);
                     if(!skipDirect || AppSettings::BakeDirectSunLight)
                         directLighting += sunDirectLighting;
-                }
+                //}
 
                 radiance += directLighting * throughput;
                 irradiance += directIrradiance * irrThroughput;
-            }
+            //}
 
-            // Pick a new path, using MIS to sample both our diffuse and specular BRDF's
-            if(AppSettings::EnableIndirectLighting || params.ViewIndirectSpecular)
-            {
-                const bool enableDiffuseSampling = metallic < 1.0f && AppSettings::EnableIndirectDiffuse && enableDiffuse && indirectSpecOnly == false;
-                const bool enableSpecularSampling = enableSpecular && AppSettings::EnableIndirectSpecular && !indirectDiffuseOnly;
-                if(enableDiffuseSampling || enableSpecularSampling)
-                {
-                    // Randomly select if we should sample our diffuse BRDF, or our specular BRDF
-                    Float2 brdfSample = params.SampleSet->BRDF();
-                    if(pathLength > 1)
-                        brdfSample = randomGenerator.RandomFloat2();
+            //if(AppSettings::EnableIndirectLighting || params.ViewIndirectSpecular)
+            //{
+            //    const bool enableDiffuseSampling = metallic < 1.0f && AppSettings::EnableIndirectDiffuse && enableDiffuse && indirectSpecOnly == false;
+            //    const bool enableSpecularSampling = enableSpecular && AppSettings::EnableIndirectSpecular && !indirectDiffuseOnly;
+            //    if(enableDiffuseSampling || enableSpecularSampling)
+            //    {
+            //        // Randomly select if we should sample our diffuse BRDF, or our specular BRDF
+            //        Float2 brdfSample = params.SampleSet->BRDF();
+            //        if(pathLength > 1)
+            //            brdfSample = randomGenerator.RandomFloat2();
 
-                    float selector = brdfSample.x;
-                    if(enableSpecularSampling == false)
-                        selector = 0.0f;
-                    else if(enableDiffuseSampling == false)
-                        selector = 1.0f;
+            //        float selector = brdfSample.x;
+            //        if(enableSpecularSampling == false)
+            //            selector = 0.0f;
+            //        else if(enableDiffuseSampling == false)
+            //            selector = 1.0f;
 
-                    Float3 sampleDir;
-                    Float3 v = Float3::Normalize(rayOrigin - hitSurface.Position);
+            //        Float3 sampleDir;
+            //        Float3 v = Float3::Normalize(rayOrigin - hitSurface.Position);
 
-                    if(selector < 0.5f)
-                    {
-                        // We're sampling the diffuse BRDF, so sample a cosine-weighted hemisphere
-                        if(enableSpecularSampling)
-                            brdfSample.x *= 2.0f;
-                        sampleDir = SampleCosineHemisphere(brdfSample.x, brdfSample.y);
-                        sampleDir = Float3::Normalize(Float3::Transform(sampleDir, tangentToWorld));
-                    }
-                    else
-                    {
-                        // We're sampling the GGX specular BRDF
-                        if(enableDiffuseSampling)
-                            brdfSample.x = (brdfSample.x - 0.5f) * 2.0f;
-                        sampleDir = SampleDirectionGGX(v, normal, roughness, tangentToWorld, brdfSample.x, brdfSample.y);
-                    }
+            //        if(selector < 0.5f)
+            //        {
+            //            // We're sampling the diffuse BRDF, so sample a cosine-weighted hemisphere
+            //            if(enableSpecularSampling)
+            //                brdfSample.x *= 2.0f;
+            //            sampleDir = SampleCosineHemisphere(brdfSample.x, brdfSample.y);
+            //            sampleDir = Float3::Normalize(Float3::Transform(sampleDir, tangentToWorld));
+            //        }
+            //        else
+            //        {
+            //            // We're sampling the GGX specular BRDF
+            //            if(enableDiffuseSampling)
+            //                brdfSample.x = (brdfSample.x - 0.5f) * 2.0f;
+            //            sampleDir = SampleDirectionGGX(v, normal, roughness, tangentToWorld, brdfSample.x, brdfSample.y);
+            //        }
 
-                    Float3 h = Float3::Normalize(v + sampleDir);
-                    float nDotL = Saturate(Float3::Dot(sampleDir, normal));
+            //        Float3 h = Float3::Normalize(v + sampleDir);
+            //        float nDotL = Saturate(Float3::Dot(sampleDir, normal));
 
-                    float diffusePDF = enableDiffuseSampling ? nDotL * InvPi : 0.0f;
-                    float specularPDF = enableSpecularSampling ? GGX_PDF(normal, h, v, roughness) : 0.0f;
-                    float pdf = diffusePDF + specularPDF;
-                    if(enableDiffuseSampling && enableSpecularSampling)
-                        pdf *= 0.5f;
+            //        float diffusePDF = enableDiffuseSampling ? nDotL * InvPi : 0.0f;
+            //        float specularPDF = enableSpecularSampling ? GGX_PDF(normal, h, v, roughness) : 0.0f;
+            //        float pdf = diffusePDF + specularPDF;
+            //        if(enableDiffuseSampling && enableSpecularSampling)
+            //            pdf *= 0.5f;
 
-                    if(nDotL > 0.0f && pdf > 0.0f && Float3::Dot(sampleDir, hitSurface.Normal) > 0.0f)
-                    {
-                        // Compute both BRDF's
-                        Float3 brdf = 0.0f;
-                        if(enableDiffuseSampling)
-                            brdf += ((AppSettings::ShowGroundTruth && params.ViewIndirectDiffuse && pathLength == 1) ? Float3(1, 1, 1) : diffuseAlbedo) * InvPi;
+            //        if(nDotL > 0.0f && pdf > 0.0f && Float3::Dot(sampleDir, hitSurface.Normal) > 0.0f)
+            //        {
+            //            // Compute both BRDF's
+            //            Float3 brdf = 0.0f;
+            //            if(enableDiffuseSampling)
+            //                brdf += ((AppSettings::ShowGroundTruth && params.ViewIndirectDiffuse && pathLength == 1) ? Float3(1, 1, 1) : diffuseAlbedo) * InvPi;
 
-                        if(enableSpecularSampling)
-                        {
-                            float spec = GGX_Specular(roughness, normal, h, v, sampleDir);
-                            brdf += Fresnel(specAlbedo, h, sampleDir) * spec;
-                        }
+            //            if(enableSpecularSampling)
+            //            {
+            //                float spec = GGX_Specular(roughness, normal, h, v, sampleDir);
+            //                brdf += Fresnel(specAlbedo, h, sampleDir) * spec;
+            //            }
 
-                        throughput *= brdf * nDotL / pdf;
-                        irrThroughput *= nDotL / pdf;
+            //            throughput *= brdf * nDotL / pdf;
+            //            irrThroughput *= nDotL / pdf;
 
-                        // Generate the ray for the new path
-                        ray = EmbreeRay(hitSurface.Position, sampleDir, 0.001f, FLT_MAX);
+            //            // Generate the ray for the new path
+            //            ray = EmbreeRay(hitSurface.Position, sampleDir, 0.001f, FLT_MAX);
 
-                        continueTracing = true;
-                    }
-                }
-            }
+            //            continueTracing = true;
+            //        }
+            //    }
+            //}
         }
 
         if(continueTracing == false)
             break;
     }
 
-    illuminance = ComputeLuminance(irradiance);
-    return radiance;
+    //illuminance = ComputeLuminance(irradiance);
+    return radiance;//radiance
 }

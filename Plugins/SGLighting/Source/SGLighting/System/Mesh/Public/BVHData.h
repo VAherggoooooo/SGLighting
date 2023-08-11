@@ -16,13 +16,34 @@ struct FMeshTriangle
 	FVector3f A;
 	FVector3f B;
 	FVector3f C;
+	FVector3f NormalA;
+	FVector3f NormalB;
+	FVector3f NormalC;
 
-	FMeshTriangle(){A = FVector3f(); B = FVector3f(); C = FVector3f();}
-	FMeshTriangle(FVector3f _A, FVector3f _B, FVector3f _C)
+	FMeshTriangle(){A = FVector3f(); B = FVector3f(); C = FVector3f(); NormalA = FVector3f(); NormalB = FVector3f(); NormalC = FVector3f();}
+	FMeshTriangle(FVector3f _A, FVector3f _B, FVector3f _C, FVector3f _NormalA, FVector3f _NormalB, FVector3f _NormalC)
 	{
 		A = _A;
 		B = _B;
 		C = _C;
+		NormalA = _NormalA;
+		NormalB = _NormalB;
+		NormalC = _NormalC;
+	}
+};
+
+struct FMainLight
+{
+	FVector3f LightDir;
+	FVector3f LightColor;
+	float LightIntensity;
+
+	FMainLight(){LightDir = FVector3f(); LightColor = FVector3f(); LightIntensity = 1;}
+	FMainLight(FVector3f _lightDir, FVector3f _lightColor, float _lightIntensity)
+	{
+		LightDir = _lightDir;
+		LightColor = _lightColor;
+		LightIntensity = _lightIntensity;
 	}
 };
 

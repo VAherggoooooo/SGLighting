@@ -719,9 +719,10 @@ template<typename TBaker> static bool BakeDriver(BakeThreadContext& context, TBa
             params.RayLen = FLT_MAX;
             params.SampleSet = &sampleSet;
 
-            float illuminance = 0.0f;
+            //float illuminance = 0.0f;
+            float ssss = 0.0f;
             bool hitSky = false;
-            sampleResult = PathTrace(params, random, illuminance, hitSky);
+            sampleResult = PathTrace(params, random, ssss, hitSky);
 
             /*if (AppSettings::BakeDirectSunLight)
             {

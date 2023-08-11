@@ -10,3 +10,9 @@ F:\BakingLab-self\SampleFramework11\v1.02\SettingsCompilerAttributes\obj\x64\Deb
 F:\BakingLab-self\SampleFramework11\v1.02\SettingsCompilerAttributes\obj\x64\Debug\SettingsCompilerAttributes.csproj.CoreCompileInputs.cache
 F:\BakingLab-self\SampleFramework11\v1.02\SettingsCompilerAttributes\obj\x64\Debug\SettingsCompilerAttributes.dll
 F:\BakingLab-self\SampleFramework11\v1.02\SettingsCompilerAttributes\obj\x64\Debug\SettingsCompilerAttributes.pdb
+F:\UE_Project\SGLighting\BakingLab-self\SampleFramework11\v1.02\SettingsCompilerAttributes\bin\x64\Debug\SettingsCompilerAttributes.dll
+F:\UE_Project\SGLighting\BakingLab-self\SampleFramework11\v1.02\SettingsCompilerAttributes\bin\x64\Debug\SettingsCompilerAttributes.pdb
+F:\UE_Project\SGLighting\BakingLab-self\SampleFramework11\v1.02\SettingsCompilerAttributes\obj\x64\Debug\SettingsCompilerAttributes.csproj.AssemblyReference.cache
+F:\UE_Project\SGLighting\BakingLab-self\SampleFramework11\v1.02\SettingsCompilerAttributes\obj\x64\Debug\SettingsCompilerAttributes.csproj.CoreCompileInputs.cache
+F:\UE_Project\SGLighting\BakingLab-self\SampleFramework11\v1.02\SettingsCompilerAttributes\obj\x64\Debug\SettingsCompilerAttributes.dll
+F:\UE_Project\SGLighting\BakingLab-self\SampleFramework11\v1.02\SettingsCompilerAttributes\obj\x64\Debug\SettingsCompilerAttributes.pdb

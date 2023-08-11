@@ -1,0 +1,5 @@
+﻿  Compiling settings and generating C++ code
+  AppSettings.cpp
+  MeshBaker.cpp
+  PathTracer.cpp
+  BakingLab_2017.vcxproj -> F:\UE_Project\SGLighting\BakingLab-self\BakingLab_raw\Debug\x64\BakingLab.exe

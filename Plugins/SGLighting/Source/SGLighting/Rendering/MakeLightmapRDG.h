@@ -8,6 +8,7 @@
 #include "Math/TransformCalculus3D.h"
 #include "SGLighting/System/Mesh/Public/BVHData.h"
 #include "ProceduralMeshComponent.h"
+#include "Engine/DirectionalLight.h"
 #include "MakeLightmapRDG.generated.h"
 
 class FRHICommandListImmediate;
@@ -238,8 +239,6 @@ public:
 	BEGIN_SHADER_PARAMETER_STRUCT(FParameters, )
 		SHADER_PARAMETER(FMatrix44f, M_Matrix)
 		SHADER_PARAMETER(FMatrix44f, M_Matrix_Invers_Trans)
-		SHADER_PARAMETER_RDG_BUFFER_SRV(StructuredBuffer<FMeshTriangle>, TriangleBuffer)
-		SHADER_PARAMETER(int, TriangleNum)
 		RENDER_TARGET_BINDING_SLOTS()
 	END_SHADER_PARAMETER_STRUCT()
 
