@@ -529,14 +529,11 @@ template<uint64 SGCount> struct SGBaker
  //baker.AddSample(       rayDirTS,           sampleIdx,        sampleResult,  rayDirWS,           bakePoint.Normal);
     void AddSample(Float3 sampleDirTS, uint64 sampleIdx, Float3 sample, Float3 sampleDirWS, Float3 normal)
     {
-        //const Float3 sampleDir = AppSettings::WorldSpaceBake ? sampleDirWS : sampleDirTS;
-        const Float3 sampleDir = sampleDirWS;
+        const Float3 sampleDir = AppSettings::WorldSpaceBake ? sampleDirWS : sampleDirTS;
+        //const Float3 sampleDir = sampleDirWS;
         SampleDirs[CurrSampleIdx] = sampleDir;
         Samples[CurrSampleIdx] = sample;
         ++CurrSampleIdx;
-
-        ProjectOntoSGs(sampleDir, sample, ProjectedResult, SGCount);
-        return;
 
         if (AppSettings::SolveMode == SolveModes::RunningAverage)
             SGRunningAverage(sampleDir, sample, ProjectedResult, SGCount, (float)sampleIdx, RunningAverageWeights, false);

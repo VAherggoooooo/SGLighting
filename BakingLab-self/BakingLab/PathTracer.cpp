@@ -262,8 +262,8 @@ Float3 PathTrace(const PathTracerParams& params, Random& randomGenerator, float&
     Float3 irrThroughput = 1.0f;
 
     // Keep tracing paths until we reach the specified max
-    //const int64 maxPathLength = params.MaxPathLength;
-    const int64 maxPathLength = 2;
+    const int64 maxPathLength = params.MaxPathLength;
+    //const int64 maxPathLength = 2;
     for(int64 pathLength = 1; pathLength <= maxPathLength || maxPathLength == -1; ++pathLength)//弹射
     {
         //基础设置
@@ -339,29 +339,29 @@ Float3 PathTrace(const PathTracerParams& params, Random& randomGenerator, float&
 
             //法线
             //{
-                /*Float3x3 tangentToWorld;
+                Float3x3 tangentToWorld;
                 tangentToWorld.SetXBasis(hitSurface.Tangent);
                 tangentToWorld.SetYBasis(hitSurface.Bitangent);
-                tangentToWorld.SetZBasis(hitSurface.Normal);*/
+                tangentToWorld.SetZBasis(hitSurface.Normal);
 
                 // Normal mapping
                 Float3 normal = hitSurface.Normal;
             //}
             
             //法线贴图
-            {
-                //const auto& normalMap = bvh.MaterialNormalMaps[materialIdx];
-            /*if(AppSettings::EnableNormalMaps && normalMap.Texels.size() > 0)
+            //{
+            const auto& normalMap = bvh.MaterialNormalMaps[materialIdx];
+            if(AppSettings::EnableNormalMaps && normalMap.Texels.size() > 0)
             {
                 normal = Float3(SampleTexture2D(hitSurface.TexCoord, normalMap));
                 normal = normal * 2.0f - 1.0f;
                 normal.z = std::sqrt(1.0f - Saturate(normal.x * normal.x + normal.y * normal.y));
                 normal = Lerp(Float3(0.0f, 0.0f, 1.0f), normal, AppSettings::NormalMapIntensity);
                 normal = Float3::Normalize(Float3::Transform(normal, tangentToWorld));
-            }*/
+            }
             //tangentToWorld.SetZBasis(normal);
 
-            }
+            //}
 
 
             float sqrtRoughness = Float3(SampleTexture2D(hitSurface.TexCoord, bvh.MaterialRoughnessMaps[materialIdx])).x;
@@ -399,79 +399,79 @@ Float3 PathTrace(const PathTracerParams& params, Random& randomGenerator, float&
                 //}
                                          
                 radiance += directLighting * throughput;
-                //irradiance += directIrradiance * irrThroughput;
+                irradiance += directIrradiance * irrThroughput;
             //}
 
                 //反弹 or 光追的间接光部分  (概括: 根据brdf选择了弹射方向)
                 
-            //if(AppSettings::EnableIndirectLighting || params.ViewIndirectSpecular)
-            //{
-            //    const bool enableDiffuseSampling = metallic < 1.0f && AppSettings::EnableIndirectDiffuse && enableDiffuse && indirectSpecOnly == false;
-            //    const bool enableSpecularSampling = enableSpecular && AppSettings::EnableIndirectSpecular && !indirectDiffuseOnly;
-            //    if(enableDiffuseSampling || enableSpecularSampling)
-            //    {
-            //        // Randomly select if we should sample our diffuse BRDF, or our specular BRDF
-            //        Float2 brdfSample = params.SampleSet->BRDF();
-            //        if(pathLength > 1)
-            //            brdfSample = randomGenerator.RandomFloat2();
+            if(AppSettings::EnableIndirectLighting || params.ViewIndirectSpecular)
+            {
+                const bool enableDiffuseSampling = metallic < 1.0f && AppSettings::EnableIndirectDiffuse && enableDiffuse && indirectSpecOnly == false;
+                const bool enableSpecularSampling = enableSpecular && AppSettings::EnableIndirectSpecular && !indirectDiffuseOnly;
+                if(enableDiffuseSampling || enableSpecularSampling)
+                {
+                    // Randomly select if we should sample our diffuse BRDF, or our specular BRDF
+                    Float2 brdfSample = params.SampleSet->BRDF();
+                    if(pathLength > 1)
+                        brdfSample = randomGenerator.RandomFloat2();
 
-            //        float selector = brdfSample.x;
-            //        if(enableSpecularSampling == false)
-            //            selector = 0.0f;
-            //        else if(enableDiffuseSampling == false)
-            //            selector = 1.0f;
+                    float selector = brdfSample.x;
+                    if(enableSpecularSampling == false)
+                        selector = 0.0f;
+                    else if(enableDiffuseSampling == false)
+                        selector = 1.0f;
 
-            //        Float3 sampleDir;
-            //        Float3 v = Float3::Normalize(rayOrigin - hitSurface.Position);
+                    Float3 sampleDir;
+                    Float3 v = Float3::Normalize(rayOrigin - hitSurface.Position);
 
-            //        if(selector < 0.5f)
-            //        {
-            //            // We're sampling the diffuse BRDF, so sample a cosine-weighted hemisphere
-            //            if(enableSpecularSampling)
-            //                brdfSample.x *= 2.0f;
-            //            sampleDir = SampleCosineHemisphere(brdfSample.x, brdfSample.y);
-            //            sampleDir = Float3::Normalize(Float3::Transform(sampleDir, tangentToWorld));
-            //        }
-            //        else
-            //        {
-            //            // We're sampling the GGX specular BRDF
-            //            if(enableDiffuseSampling)
-            //                brdfSample.x = (brdfSample.x - 0.5f) * 2.0f;
-            //            sampleDir = SampleDirectionGGX(v, normal, roughness, tangentToWorld, brdfSample.x, brdfSample.y);
-            //        }
+                    if(selector < 0.5f)
+                    {
+                        // We're sampling the diffuse BRDF, so sample a cosine-weighted hemisphere
+                        if(enableSpecularSampling)
+                            brdfSample.x *= 2.0f;
+                        sampleDir = SampleCosineHemisphere(brdfSample.x, brdfSample.y);
+                        sampleDir = Float3::Normalize(Float3::Transform(sampleDir, tangentToWorld));
+                    }
+                    else
+                    {
+                        // We're sampling the GGX specular BRDF
+                        if(enableDiffuseSampling)
+                            brdfSample.x = (brdfSample.x - 0.5f) * 2.0f;
+                        sampleDir = SampleDirectionGGX(v, normal, roughness, tangentToWorld, brdfSample.x, brdfSample.y);
+                    }
 
-            //        Float3 h = Float3::Normalize(v + sampleDir);
-            //        float nDotL = Saturate(Float3::Dot(sampleDir, normal));
+                    Float3 h = Float3::Normalize(v + sampleDir);
+                    float nDotL = Saturate(Float3::Dot(sampleDir, normal));
 
-            //        float diffusePDF = enableDiffuseSampling ? nDotL * InvPi : 0.0f;
-            //        float specularPDF = enableSpecularSampling ? GGX_PDF(normal, h, v, roughness) : 0.0f;
-            //        float pdf = diffusePDF + specularPDF;
-            //        if(enableDiffuseSampling && enableSpecularSampling)
-            //            pdf *= 0.5f;
+                    float diffusePDF = enableDiffuseSampling ? nDotL * InvPi : 0.0f;
+                    float specularPDF = enableSpecularSampling ? GGX_PDF(normal, h, v, roughness) : 0.0f;
+                    float pdf = diffusePDF + specularPDF;
+                    if(enableDiffuseSampling && enableSpecularSampling)
+                        pdf *= 0.5f;
 
-            //        if(nDotL > 0.0f && pdf > 0.0f && Float3::Dot(sampleDir, hitSurface.Normal) > 0.0f)
-            //        {
-            //            // Compute both BRDF's
-            //            Float3 brdf = 0.0f;
-            //            if(enableDiffuseSampling)
-            //                brdf += ((AppSettings::ShowGroundTruth && params.ViewIndirectDiffuse && pathLength == 1) ? Float3(1, 1, 1) : diffuseAlbedo) * InvPi;
+                    if(nDotL > 0.0f && pdf > 0.0f && Float3::Dot(sampleDir, hitSurface.Normal) > 0.0f)
+                    {
+                        // Compute both BRDF's
+                        Float3 brdf = 0.0f;
+                        if(enableDiffuseSampling)
+                            brdf += ((AppSettings::ShowGroundTruth && params.ViewIndirectDiffuse && pathLength == 1) ? Float3(1, 1, 1) : diffuseAlbedo) * InvPi;
 
-            //            if(enableSpecularSampling)
-            //            {
-            //                float spec = GGX_Specular(roughness, normal, h, v, sampleDir);
-            //                brdf += Fresnel(specAlbedo, h, sampleDir) * spec;
-            //            }
+                        if(enableSpecularSampling)
+                        {
+                            float spec = GGX_Specular(roughness, normal, h, v, sampleDir);
+                            brdf += Fresnel(specAlbedo, h, sampleDir) * spec;
+                        }
 
-            //            throughput *= brdf * nDotL / pdf;
-            //            irrThroughput *= nDotL / pdf;
+                        throughput *= brdf * nDotL / pdf;
+                        irrThroughput *= nDotL / pdf;
 
-            //            // Generate the ray for the new path
-            //            ray = EmbreeRay(hitSurface.Position, sampleDir, 0.001f, FLT_MAX);
+                        // Generate the ray for the new path
+                        ray = EmbreeRay(hitSurface.Position, sampleDir, 0.001f, FLT_MAX);
 
-            //            continueTracing = true;
-            //        }
-            //    }
-            //}
+                        continueTracing = true;
+                    }
+                }
+            }
                 
         }
 
@@ -479,6 +479,6 @@ Float3 PathTrace(const PathTracerParams& params, Random& randomGenerator, float&
             break;
     }
 
-    //illuminance = ComputeLuminance(irradiance);
+    illuminance = ComputeLuminance(irradiance);
     return radiance;//radiance
 }

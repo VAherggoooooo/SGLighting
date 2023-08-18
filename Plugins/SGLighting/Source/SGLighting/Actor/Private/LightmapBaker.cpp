@@ -62,7 +62,7 @@ void ALightmapBaker::InitSGs()
 	int i = 0;
 	for(UTextureRenderTarget2D* rt : SGRTs)
 	{
-		OutSGs[i].OutputRT =  OutSGs[i].OutputRT == nullptr? rt : OutSGs[i].OutputRT;
+		OutSGs[i].OutputRT =  rt;
 		i++;
 	}
 

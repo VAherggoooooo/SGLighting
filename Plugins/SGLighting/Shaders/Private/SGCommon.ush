@@ -160,25 +160,25 @@ float3 PathTracingShading(Ray _ray, int _depth, FMainLight _Light)
 	if(_depth <= 0) return finalLight;
 	
 	for(uint i = 0; i < _depth; i++)//_depth
-		{
+	{
 		HitInfo info = HitChecke(_ray);
 		if(info.didHit)
 		{
 			float3 fromDir = _ray.dir;
 			float3 fromNor = _ray.curNormal;
 			float3 newDir = GetRandomDir(info.normal, info.pos, _ray.uv);
-
+	
 			//把采样点挪到击中点, 并随机新的方向
 			_ray.ori = info.pos;
 			_ray.dir = newDir;
 			_ray.curNormal = info.normal;
-
+	
 			float3 sunLight = SampleSun(_ray, _Light);
 			rayColour *= sunLight * 1.2;// /  PI;
 			//rayColour *= sunLight * PI;
 			
 			//rayColour *= saturate(dot(fromNor, fromDir));
-			if(max(rayColour.x, max(rayColour.y, rayColour.z)) < 0.1)
+			if(max(rayColour.x, max(rayColour.y, rayColour.z)) < 0.02)
 			{
 				break;
 			}

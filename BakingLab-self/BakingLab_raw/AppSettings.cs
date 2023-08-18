@@ -710,7 +710,8 @@ public class Settings
         BakeModes BakeMode = BakeModes.SG5;
 
         [HelpText("Controls how path tracer radiance samples are converted into a set of per-texel SG lobes")]
-        SolveModes SolveMode = SolveModes.RunningAverageNN;
+        //SolveModes SolveMode = SolveModes.RunningAverageNN;
+        SolveModes SolveMode = SolveModes.Projection;
 
         [HelpText("If true, the sample points are baked in a world-space orientation instead of tangent space (SH and SG bake modes only)")]
         bool WorldSpaceBake = false;

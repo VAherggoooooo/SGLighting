@@ -534,7 +534,7 @@ namespace AppSettings
         BakeMode.Initialize(tweakBar, "BakeMode", "Baking", "Bake Mode", "The current encoding/basis used for baking light map sample points", BakeModes::SG5, 12, BakeModesLabels);
         Settings.AddSetting(&BakeMode);
 
-        SolveMode.Initialize(tweakBar, "SolveMode", "Baking", "Solve Mode", "Controls how path tracer radiance samples are converted into a set of per-texel SG lobes", SolveModes::RunningAverageNN, 5, SolveModesLabels);
+        SolveMode.Initialize(tweakBar, "SolveMode", "Baking", "Solve Mode", "Controls how path tracer radiance samples are converted into a set of per-texel SG lobes", SolveModes::Projection, 5, SolveModesLabels);
         Settings.AddSetting(&SolveMode);
 
         WorldSpaceBake.Initialize(tweakBar, "WorldSpaceBake", "Baking", "World Space Bake", "If true, the sample points are baked in a world-space orientation instead of tangent space (SH and SG bake modes only)", false);
