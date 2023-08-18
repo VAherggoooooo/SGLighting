@@ -1,0 +1,112 @@
+#ifndef SG_DATA
+#define SG_DATA
+
+#include "/Engine/Private/Common.ush"
+
+
+
+#define RAY_MAXTIME 10000
+#define SG_NUM 12
+
+
+//>>>>>>>>>>>>>>>>>>>>>>>>>> STRUCT <<<<<<<<<<<<<<<<<<<<<<<<<
+struct FMeshTriangle
+{
+	float3 A;
+	float3 B;
+	float3 C;
+	float3 NormalA;
+	float3 NormalB;
+	float3 NormalC;
+};
+
+struct FMainLight
+{
+	float3 LightDir;
+	float3 LightColor;
+	float LightIntensity;
+};
+
+
+struct Ray
+{
+	float3 ori;
+	float3 curPos;
+	float3 dir;
+	float2 uv;
+	float3 curNormal;
+};
+
+struct HitInfo
+{
+	float3 pos;
+	float3 normal;
+	float2 uv;
+	float3 color;
+	float hitTime;
+	bool didHit;
+};
+
+struct Material
+{
+	float3 albedo;
+	float3 emissive;
+};
+
+struct FSG
+{
+	//TODO: 从cpp中传入sg结构buffer
+	//exp(2 * Sharpness * (dot(Axis, Direction) - 1.0f)) integrated over the sampling domain.
+	float3 Axis;
+	float3 Amplitude;
+	float Sharpness;
+	float BasisSqIntegralOverDomain;
+};
+
+
+//>>>>>>>>>>>>>>>>>>>>>>>>>>> VARIABLE <<<<<<<<<<<<<<<<<<<<<<<<<<<
+StructuredBuffer<FMeshTriangle> TriangleBuffer;
+StructuredBuffer<FMainLight> MainLightBuffer;
+StructuredBuffer<FSG> SGBuffer;
+
+
+RWTexture2D<float4> OutTexture;
+RWTexture2D<float4> TestTexture;
+
+
+RWTexture2D<float4> SG1;
+RWTexture2D<float4> SG2;
+RWTexture2D<float4> SG3;
+RWTexture2D<float4> SG4;
+RWTexture2D<float4> SG5;
+RWTexture2D<float4> SG6;
+RWTexture2D<float4> SG7;
+RWTexture2D<float4> SG8;
+RWTexture2D<float4> SG9;
+RWTexture2D<float4> SG10;
+RWTexture2D<float4> SG11;
+RWTexture2D<float4> SG12;
+
+
+Texture2D InPosition;
+Texture2D InNormal;
+Texture2D InTangent;
+
+SamplerState InPositionSampler;
+SamplerState InNormalSampler;
+SamplerState InTangentSampler;
+
+float3 MainLightDir;
+
+float seed;
+
+int TriangleNum;
+int depth;
+int SampleCount;
+
+
+
+
+
+
+#endif

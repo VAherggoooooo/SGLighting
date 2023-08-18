@@ -142,6 +142,8 @@ void RDGDraw(FRHICommandListImmediate &RHIImmCmdList, FTexture2DRHIRef PositonRH
 	GTextureVertexDeclaration.InitRHI();
 	GRectangleIndexBuffer.InitRHI();
 
+	//UE_LOG(LogTemp, Warning, TEXT("%d"), GRectangleVertexBuffer.VertexNum);
+
 	DrawToRT(RHIImmCmdList, PositonRHI, OutRTType::PositionWS);
 	DrawToRT(RHIImmCmdList, NormalRHI, OutRTType::NormalWS);
 	DrawToRT(RHIImmCmdList, TangentRHI, OutRTType::TangentWS);
@@ -168,7 +170,7 @@ void DrawToRT(FRHICommandListImmediate &RHIImmCmdList, FTexture2DRHIRef RTRHI, O
 	TShaderMapRef<FSGPixelPositionShader> PixelShader_Position(GlobalShaderMap);
 	TShaderMapRef<FSGPixelNormalShader> PixelShader_Normal(GlobalShaderMap);
 	TShaderMapRef<FSGPixelTangentShader> PixelShader_Tangent(GlobalShaderMap);
-
+	
 	if(Type == OutRTType::NormalWS)
 	{
 		GraphBuilder.AddPass(RDG_EVENT_NAME("RDGDraw"),Parameters,ERDGPassFlags::Raster,

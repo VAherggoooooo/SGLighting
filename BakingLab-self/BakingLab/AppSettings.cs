@@ -390,7 +390,7 @@ public class Settings
     {
         [HelpText("Controls the sky used for GI baking and background rendering")]
         [UseAsShaderConstant(false)]
-        SkyModes SkyMode = SkyModes.None;
+        SkyModes SkyMode = SkyModes.None;//Procedural
 
         [HelpText("The color of the simple sky")]
         [MinValue(0.0f)]
@@ -685,7 +685,7 @@ public class Settings
 
         [UseAsShaderConstant(false)]
         [DisplayName("Sample Mode")]
-        SampleModes BakeSampleMode = SampleModes.Random;
+        SampleModes BakeSampleMode = SampleModes.Random;//CMJ
 
         [HelpText("Maximum path length (bounces + 2) to use for baking GI (set to -1 for infinite)")]
         [UseAsShaderConstant(false)]
@@ -707,7 +707,7 @@ public class Settings
         float BakeRussianRouletteProbability = 0.5f;
 
         [HelpText("The current encoding/basis used for baking light map sample points")]
-        BakeModes BakeMode = BakeModes.SG12;
+        BakeModes BakeMode = BakeModes.SG5;
 
         [HelpText("Controls how path tracer radiance samples are converted into a set of per-texel SG lobes")]
         SolveModes SolveMode = SolveModes.RunningAverageNN;
@@ -748,11 +748,11 @@ public class Settings
 
         [DisplayName("Enable Albedo Maps")]
         [HelpText("Enables albedo maps")]
-        bool EnableAlbedoMaps = false;
+        bool EnableAlbedoMaps = false;//true
 
         [DisplayName("Enable Normal Maps")]
         [HelpText("Enables normal maps")]
-        bool EnableNormalMaps = false;
+        bool EnableNormalMaps = false;//true
 
         [DisplayName("Normal Map Intensity")]
         [MinValue(0.0f)]

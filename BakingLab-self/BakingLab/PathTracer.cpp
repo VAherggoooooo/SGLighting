@@ -262,26 +262,33 @@ Float3 PathTrace(const PathTracerParams& params, Random& randomGenerator, float&
     Float3 irrThroughput = 1.0f;
 
     // Keep tracing paths until we reach the specified max
-    const int64 maxPathLength = params.MaxPathLength;
+    //const int64 maxPathLength = params.MaxPathLength;
+    const int64 maxPathLength = 2;
     for(int64 pathLength = 1; pathLength <= maxPathLength || maxPathLength == -1; ++pathLength)//弹射
     {
-        const bool indirectSpecOnly = params.ViewIndirectSpecular && pathLength == 1;
-        const bool indirectDiffuseOnly = params.ViewIndirectDiffuse && pathLength == 1;
-        const bool enableSpecular = (params.EnableBounceSpecular || (pathLength == 1)) && params.EnableSpecular;
-        const bool enableDiffuse = params.EnableDiffuse;
-        const bool skipDirect = AppSettings::ShowGroundTruth && (!AppSettings::EnableDirectLighting || indirectDiffuseOnly) && (pathLength == 1);
-        //const bool skipDirect = false;
+        //基础设置
+        //{
+            const bool indirectSpecOnly = params.ViewIndirectSpecular && pathLength == 1;
+            const bool indirectDiffuseOnly = params.ViewIndirectDiffuse && pathLength == 1;
+            const bool enableSpecular = (params.EnableBounceSpecular || (pathLength == 1)) && params.EnableSpecular;
+            const bool enableDiffuse = params.EnableDiffuse;
+            const bool skipDirect = AppSettings::ShowGroundTruth && (!AppSettings::EnableDirectLighting || indirectDiffuseOnly) && (pathLength == 1);
 
-        // See if we should randomly terminate this path using Russian Roullete     
-        const int32 rouletteDepth = params.RussianRouletteDepth;
-        if(pathLength >= rouletteDepth && rouletteDepth != -1)
-        {
-            float continueProbability = std::min<float>(params.RussianRouletteProbability, ComputeLuminance(throughput));
-            if(randomGenerator.RandomFloat() > continueProbability)
-                break;
-            throughput /= continueProbability;
-            irrThroughput /= continueProbability;
-        }//通过轮盘赌
+        //}        
+
+        //轮盘赌
+        //{
+            // See if we should randomly terminate this path using Russian Roullete     
+            const int32 rouletteDepth = params.RussianRouletteDepth;
+            if (pathLength >= rouletteDepth && rouletteDepth != -1)
+            {
+                float continueProbability = std::min<float>(params.RussianRouletteProbability, ComputeLuminance(throughput));
+                if (randomGenerator.RandomFloat() > continueProbability)
+                    break;
+                throughput /= continueProbability;
+                irrThroughput /= continueProbability;
+            }//通过轮盘赌
+        //}
 
         // Set this to true to keep the loop going
         bool continueTracing = false;
@@ -296,7 +303,7 @@ Float3 PathTrace(const PathTracerParams& params, Random& randomGenerator, float&
         // Check for intersection with the area light for primary rays
         float lightDistance = FLT_MAX;
 
-        if(sceneDistance < FLT_MAX)
+        if(sceneDistance < FLT_MAX)//击中场景里的三角形
         {
             // We hit a triangle in the scene
             if(pathLength == maxPathLength)
@@ -322,17 +329,28 @@ Float3 PathTrace(const PathTracerParams& params, Random& randomGenerator, float&
             const uint64 materialIdx = bvh.MaterialIndices[ray.primID];
 
             Float3 albedo = 1.0f;
-            /*if(AppSettings::EnableAlbedoMaps && !indirectDiffuseOnly)
+            
+            //基础纹理
+            {
+                /*if(AppSettings::EnableAlbedoMaps && !indirectDiffuseOnly)
                 albedo = SampleTexture2D(hitSurface.TexCoord, bvh.MaterialDiffuseMaps[materialIdx]);*/
 
-            Float3x3 tangentToWorld;
-            tangentToWorld.SetXBasis(hitSurface.Tangent);
-            tangentToWorld.SetYBasis(hitSurface.Bitangent);
-            tangentToWorld.SetZBasis(hitSurface.Normal);
+            }
 
-            // Normal mapping
-            Float3 normal = hitSurface.Normal;
-            //const auto& normalMap = bvh.MaterialNormalMaps[materialIdx];
+            //法线
+            //{
+                /*Float3x3 tangentToWorld;
+                tangentToWorld.SetXBasis(hitSurface.Tangent);
+                tangentToWorld.SetYBasis(hitSurface.Bitangent);
+                tangentToWorld.SetZBasis(hitSurface.Normal);*/
+
+                // Normal mapping
+                Float3 normal = hitSurface.Normal;
+            //}
+            
+            //法线贴图
+            {
+                //const auto& normalMap = bvh.MaterialNormalMaps[materialIdx];
             /*if(AppSettings::EnableNormalMaps && normalMap.Texels.size() > 0)
             {
                 normal = Float3(SampleTexture2D(hitSurface.TexCoord, normalMap));
@@ -343,6 +361,9 @@ Float3 PathTrace(const PathTracerParams& params, Random& randomGenerator, float&
             }*/
             //tangentToWorld.SetZBasis(normal);
 
+            }
+
+
             float sqrtRoughness = Float3(SampleTexture2D(hitSurface.TexCoord, bvh.MaterialRoughnessMaps[materialIdx])).x;
             float metallic =  Float3(SampleTexture2D(hitSurface.TexCoord, bvh.MaterialMetallicMaps[materialIdx])).x;
             metallic = Saturate(metallic + AppSettings::MetallicOffset);
@@ -352,7 +373,7 @@ Float3 PathTrace(const PathTracerParams& params, Random& randomGenerator, float&
             sqrtRoughness *= AppSettings::RoughnessScale;
             if(AppSettings::RoughnessOverride >= 0.01f)
                 sqrtRoughness = AppSettings::RoughnessOverride;
-
+            
             sqrtRoughness = Saturate(sqrtRoughness);
             float roughness = sqrtRoughness * sqrtRoughness;
 
@@ -371,14 +392,18 @@ Float3 PathTrace(const PathTracerParams& params, Random& randomGenerator, float&
                     Float3 sunDirectLighting = SampleSunLight(hitSurface.Position, normal, bvh.Scene, diffuseAlbedo,
                                                      rayOrigin, enableSpecular, specAlbedo, roughness,
                                                      sunSample.x, sunSample.y, directIrradiance);
-                    if(!skipDirect || AppSettings::BakeDirectSunLight)
-                        directLighting += sunDirectLighting;
+                    if (!skipDirect || AppSettings::BakeDirectSunLight)
+                    {
+                        directLighting += sunDirectLighting; //叠加间接光(不包含直接光)                        
+                    } 
                 //}
-
+                                         
                 radiance += directLighting * throughput;
-                irradiance += directIrradiance * irrThroughput;
+                //irradiance += directIrradiance * irrThroughput;
             //}
 
+                //反弹 or 光追的间接光部分  (概括: 根据brdf选择了弹射方向)
+                
             //if(AppSettings::EnableIndirectLighting || params.ViewIndirectSpecular)
             //{
             //    const bool enableDiffuseSampling = metallic < 1.0f && AppSettings::EnableIndirectDiffuse && enableDiffuse && indirectSpecOnly == false;
@@ -447,6 +472,7 @@ Float3 PathTrace(const PathTracerParams& params, Random& randomGenerator, float&
             //        }
             //    }
             //}
+                
         }
 
         if(continueTracing == false)

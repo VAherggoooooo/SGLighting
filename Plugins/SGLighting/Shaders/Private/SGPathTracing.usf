@@ -1,269 +1,6 @@
-#include "/Engine/Public/Platform.ush"
 #include "/Engine/Private/Common.ush"
-#include "/Engine/Private/Random.ush"
+#include "SGCommon.ush"
 
-//#define RAY_BOUNCE_TIME 8
-#define RAY_MINTIME -1000
-#define RAY_MAXTIME 10000
-#define RAY_MAX_DISTANCE 1000000
-//#define RAY_SAMPLE_NUM 231 //TODO: 性能优化, 使用渐进式来降噪
-#define RAND_MAX 0x7fff
-
- 
-RWTexture2D<float4> OutTexture;  
-Texture2D InPosition;
-SamplerState InPositionSampler;
-Texture2D InNormal;
-SamplerState InNormalSampler;
-Texture2D InTangent;
-SamplerState InTangentSampler;
-int TriangleNum;
-float3 MainLightDir;
-
-int depth;
-int SampleCount;
-
-struct FMeshTriangle
-{
-	float3 A;
-	float3 B;
-	float3 C;
-	float3 NormalA;
-	float3 NormalB;
-	float3 NormalC;
-};
-
-struct FMainLight
-{
-	float3 LightDir;
-	float3 LightColor;
-	float LightIntensity;
-};
-
-StructuredBuffer<FMeshTriangle> TriangleBuffer;
-StructuredBuffer<FMainLight> MainLightBuffer;
-
-struct Ray
-{
-	float3 ori;
-	float3 curPos;
-	float3 dir;
-	float2 uv;
-	float3 curNormal;
-};
-
-struct HitInfo
-{
-	float3 pos;
-	float3 normal;
-	float2 uv;
-	float3 color;
-	float hitTime;
-	bool didHit;
-};
-
-
-HitInfo GetHitInfo(float3 _pos, float3 _normal, float2 _uv, float3 _color, float _hitTime)
-{
-	HitInfo outInfo;
-	outInfo.pos = _pos;
-	outInfo.normal = _normal;
-	outInfo.uv = _uv;
-	outInfo.color = _color;
-	outInfo.hitTime = _hitTime;
-	outInfo.didHit = false;
-	return outInfo;
-}
-
-Ray GetRay(float3 _ori, float3 _dir, float2 _uv, float3 _curNormal)
-{
-	Ray r;
-	r.ori = _ori;
-	r.dir = _dir;
-	r.uv = _uv;
-	r.curNormal = _curNormal;
-	return r;
-}
-
-struct Material
-{
-	float3 albedo;
-	float3 emissive;
-};
-
-HitInfo HitChecke(Ray _ray)
-{
-
-	HitInfo outInfo = GetHitInfo(_ray.ori, 0, _ray.uv, 0, RAY_MAXTIME + 5);
-	for(int i = 0; i < TriangleNum; i++)
-	{
-		FMeshTriangle t = TriangleBuffer[i];
-
-		float3 normalFace = -cross(t.B - t.A, t.C - t.B);
-		if(dot(normalFace, _ray.dir) > 0) continue;//反面
-	
-		float hitTime = dot((t.A - _ray.ori), normalFace) / dot(_ray.dir, normalFace);
-		if(hitTime < 0 || hitTime > RAY_MAXTIME)
-			continue;
-	
-		float3 hitPos = hitTime * _ray.dir + _ray.ori;
-		float3 pa = hitPos - t.A;
-		float3 pb = hitPos - t.B;
-		float3 pc = hitPos - t.C;
-		float3 ba = t.B - t.A;
-		float3 cb = t.C - t.B;
-		float3 ac = t.A - t.C;
-	
-		float3 crs1 = cross(pa, ba);
-		float3 crs2 = cross(pb, cb);
-		float3 crs3 = cross(pc, ac);
-
-		if((dot(crs1, crs2) >= 0) && (dot(crs3, crs2) >= 0))//射线与三角形正面相交
-		{
-			outInfo.didHit = true;
-			if(hitTime < outInfo.hitTime)
-			{
-				outInfo.hitTime = hitTime;
-				//outInfo.pos = hitTime * _ray.dir + _ray.ori;
-				//outInfo.normal = normalize(normalFace);//TODO: 三角面的法线不代表击中点的法线, 需要插值
-
-				//TODO: 找到最近的相交点后, 获得材质属性
-				outInfo.pos = hitTime * _ray.dir + _ray.ori;
-				float3 edgeAB = t.B - t.A;
-				float3 edgeAC = t.C - t.A;
-				float3 normalVector = cross(edgeAB, edgeAC);
-				float3 ao = _ray.ori - t.A;
-				float3 dao = cross(ao, _ray.dir);
-
-				float determinant = -dot(_ray.dir, normalVector);
-				float invDet = 1 / determinant;
-				
-				float dst = dot(ao, normalVector) * invDet;
-				float u = dot(edgeAC, dao) * invDet;
-				float v = -dot(edgeAB, dao) * invDet;
-				float w = 1 - u - v;
-				outInfo.normal = normalize(t.A * w + t.NormalB * u + t.NormalC * v);
-
-
-				outInfo.normal = normalize(normalFace);
-			}
-		}
-	}
-	
-	
-	return outInfo;
-}
-
-float hash3(float3 co)
-{
-	return frac(sin(dot(co.xyz, float3(12.9898, 78.233, 53.539))) * 43758.5453);
-}
-
-float hash(float2 p)
-{
-	return frac(sin(dot(p, float2(12.9898, 78.233))) * 43758.5453);
-}
-
-float4 hash4(float2 p) 
-{ 
-	return frac(sin(float4( 1.0+dot(p,float2(37.0,17.0)), 
-						2.0+dot(p,float2(11.0,47.0)),
-						3.0+dot(p,float2(41.0,29.0)),
-						4.0+dot(p,float2(23.0,31.0))))*103.0); 
-}
-float3 hash33(float3 p3)
-{
-	p3 = frac(p3 * float3(.1031, .1030, .0973));
-	p3 += dot(p3, p3.yxz+33.33);
-	return frac((p3.xxy + p3.yxx)*p3.zyx);
-}
-
-
-float3 GetRandomDir(float3 normal, float3 pos, float2 uv, float seed)
-{
-	//float3 randDir = hash4(float2(hash3(pos), hash(uv + seed))).xyz;
-
-	float3 randDir = hash33(pos);
-	randDir = randDir * 2.0 - 1.0;
-	randDir = dot(randDir, normal) > 0? randDir : -randDir;
-
-	//return hash33(pos);
-	return normalize(randDir);
-}
-
-float3 SampleSun(Ray _ray, FMainLight _Light)
-{
-	//TODO: 获得光照强度
-	Ray toLight;
-	toLight.ori = _ray.ori;
-	toLight.dir = -_Light.LightDir;
-	HitInfo info = HitChecke(toLight);
-	if(info.didHit) return 0;
-
-	float LdotN = saturate(dot(toLight.dir, _ray.curNormal));
-	return LdotN * _Light.LightIntensity *_Light.LightColor;
-}
-
-float3 PathTracingShading(Ray _ray, int _depth, FMainLight _Light)
-{
-	float3 finalLight = 0;
-	float3 rayColour = 1;
-	
-	if(_depth <= 0) return finalLight;
-	
-	for(uint i = 0; i < _depth; i++)//depth
-	{
-		HitInfo info = HitChecke(_ray);
-		if(info.didHit)
-		{
-			float3 fromDir = _ray.dir;
-			float3 fromNor = _ray.curNormal;
-			float3 newDir = GetRandomDir(info.normal, info.pos, _ray.uv, _depth);
-			_ray.dir = newDir;
-			_ray.ori = info.pos;
-			_ray.curNormal = info.normal;
-			
-			rayColour *= SampleSun(_ray, _Light) * saturate(dot(fromDir, fromNor));
-			finalLight += rayColour;
-			
-			//finalLight += SampleSun(_ray, _Light) * saturate(dot(fromDir, fromNor));//TODO: 看起来很对, 但还需验证(深井)
-			
-		}
-		else//TODO: 计算天光
-		{
-			//finalLight += rayColour * dot(-_Light.LightDir, _ray.curNormal);
-			//break;
-		}
-	}
-	return finalLight;
-
-	// Ray toLight;
-	// toLight.ori = _ray.ori;
-	// toLight.dir = -_Light.LightDir;
-	// toLight.curNormal = _ray.curNormal;
-	// HitInfo info = HitChecke(toLight);
-	// if(info.didHit) return 0;
-	//
-	// float3 sunLight = SampleSun(_ray, _Light);
-	// return sunLight;
-	//float LdotN = saturate(dot(toLight.dir, _ray.curNormal));
-	//return LdotN * _Light.LightIntensity *_Light.LightColor;
-}
-
-float ComputeLuminance(float3 color)
-{
-	return dot(color, float3(0.2126f, 0.7152f, 0.0722f));
-}
-
-float4 BlurColor(float4 curColor, float4 targetColor)
-{
-	float4 outColor = curColor;
-	if(ComputeLuminance(curColor.xyz) < 0.1)
-	{
-		outColor = curColor * 0.1 + targetColor * 0.9;
-	}
-	return outColor;
-}
 
 [numthreads(32, 32, 1)]
 void MainCS(uint3 ThreadId : SV_DispatchThreadID)
@@ -271,35 +8,76 @@ void MainCS(uint3 ThreadId : SV_DispatchThreadID)
 	float sizeX, sizeY;
 	OutTexture.GetDimensions(sizeX, sizeY);
 	float2 iResolution = float2(sizeX, sizeY);
-	float2 uv = (ThreadId.xy / iResolution.xy);//get uv
+	float2 uv = (float2(ThreadId.x, ThreadId.y) / iResolution.xy);//get uv
 
-	if(InPosition.Sample(InPositionSampler, uv).w <= 0.5)
+	RWTexture2D<float4> SGTexes[SG_NUM] = {SG1, SG2, SG3, SG4, SG5, SG6, SG7, SG8, SG9, SG10, SG11, SG12};
+	
+	//TODO: 备选去黑边方案: 将烘焙的图利用洪水算法往外扩一个像素
+	if(InPosition.Sample(InPositionSampler, uv).w <= 0.5)//空白像素不计算
 	{
-		OutTexture[ThreadId.xy] = 0;
+		OutTexture[ThreadId.xy] = float4(0.0, 0.0, 0.0, 1.0);
 		return;
 	}
+	
 	FMainLight Light = MainLightBuffer[0];
 	float3 pos = InPosition.Sample(InPositionSampler, uv).xyz;//pos ws
 	float3 normal = InNormal.Sample(InNormalSampler, uv).xyz;//normal ws
 
+	float3 dirColor[SG_NUM] = {float3(0,0,0),
+	float3(0,0,0),
+	float3(0,0,0),
+	float3(0,0,0),
+	float3(0,0,0),
+	float3(0,0,0),
+	float3(0,0,0),
+	float3(0,0,0),
+	float3(0,0,0),
+	float3(0,0,0),
+	float3(0,0,0),
+	float3(0,0,0)};
 	float3 finalColor = 0;
-	float3 minlight = float3(-0.5, -0.4, -0.2);
+	float3 dirColor_1 = 0;
 	for(int i = 0; i < SampleCount; i++)
 	{
-		//float3 rayDir = GetRandomDir(normal, pos, uv, i + ThreadId.x + ThreadId.y);
-		float3 rayDir = GetRandomDir(normal, pos + i * normal, uv, i + ThreadId.x + ThreadId.y);
+		float3 rayDir = GetRandomDir(normal, pos + i * normal, uv * i + seed);
 		Ray ray = GetRay(pos + normal * 0.002, rayDir, uv, normal);
-		finalColor += PathTracingShading(ray, depth, Light);
+		float3 rayColor = PathTracingShading(ray, depth, Light);
+		finalColor += rayColor;
+
+		//TODO: 投射到SG
+		for(int j = 0; j <SG_NUM; j++)
+		{
+			dirColor[j] += ProjectOntoSGs(rayDir, rayColor, SGBuffer[j]);
+		}
 	}
 	finalColor /= SampleCount;
-	//TODO: 投射到SG
+	for(int j = 0; j <SG_NUM; j++)
+	{
+		dirColor[j] /= SampleCount;
+	}
 
-	//TODO: 优化模糊
-	// OutTexture[float2(ThreadId.x + 1, ThreadId.y)] = BlurColor(OutTexture[float2(ThreadId.x + 1, ThreadId.y)], float4(finalColor, 1.0));
-	// OutTexture[float2(ThreadId.x, ThreadId.y + 1)] = BlurColor(OutTexture[float2(ThreadId.x, ThreadId.y + 1)], float4(finalColor, 1.0));
-	// OutTexture[float2(ThreadId.x - 1, ThreadId.y)] = BlurColor(OutTexture[float2(ThreadId.x - 1, ThreadId.y)], float4(finalColor, 1.0));
-	// OutTexture[float2(ThreadId.x, ThreadId.y - 1)] = BlurColor(OutTexture[float2(ThreadId.x, ThreadId.y - 1)], float4(finalColor, 1.0));
+	//输出
+	OutTexture[ThreadId.xy] = float4(finalColor, 1.0);//主纹理
+	//SG纹理
+	TestTexture[ThreadId.xy] = float4(dirColor_1, 1.0);
 	
-	OutTexture[ThreadId.xy] = float4(finalColor, 1.0);
+	SG1[ThreadId.xy] = float4(dirColor[0], 1.0);
+	SG2[ThreadId.xy] = float4(dirColor[1], 1.0);
+	SG3[ThreadId.xy] = float4(dirColor[2], 1.0);
+	SG4[ThreadId.xy] = float4(dirColor[3], 1.0);
+	SG5[ThreadId.xy] = float4(dirColor[4], 1.0);
+	SG6[ThreadId.xy] = float4(dirColor[5], 1.0);
+	SG7[ThreadId.xy] = float4(dirColor[6], 1.0);
+	SG8[ThreadId.xy] = float4(dirColor[7], 1.0);
+	SG9[ThreadId.xy] = float4(dirColor[8], 1.0);
+	SG10[ThreadId.xy] = float4(dirColor[9], 1.0);
+	SG11[ThreadId.xy] = float4(dirColor[10], 1.0);
+	SG12[ThreadId.xy] = float4(dirColor[11], 1.0);
+
+	// for(int i = 0; i < SG_NUM; i++)
+	// {
+	// 	SGTexes[i][ThreadId.xy] = float4(saturate(SGBuffer[i].Axis), 1.0);
+	// }
+
 }
 

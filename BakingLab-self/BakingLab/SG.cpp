@@ -28,6 +28,7 @@ static bool eigenInitialized = false;
 // Generate uniform spherical gaussians on the sphere or hemisphere
 void GenerateUniformSGs(SG* outSGs, uint64 numSGs, SGDistribution distribution)
 {
+    //numSGs
     const uint64 N = distribution == SGDistribution::Hemispherical ? numSGs * 2 : numSGs;
 
     Float3 means[AppSettings::MaxSGCount * 2];
@@ -40,7 +41,7 @@ void GenerateUniformSGs(SG* outSGs, uint64 numSGs, SGDistribution distribution)
         float r = std::sqrt(1.0f - y * y);
         float phi = k * inc;
         means[k] = Float3(std::cos(phi) * r, std::sin(phi) * r, y);
-    }
+    }//随机了12个方向, 某种算法
 
     uint64 currSG = 0;
     for(uint64 i = 0; i < N; ++i)
@@ -50,32 +51,35 @@ void GenerateUniformSGs(SG* outSGs, uint64 numSGs, SGDistribution distribution)
         if(distribution == SGDistribution::Spherical || Float3::Dot(means[i].z, Float3(0.0f, 0.0f, 1.0f)) >= 0.0f)
         {
             SG sample;
-            sample.Axis = Float3::Normalize(means[i]);
-            outSGs[currSG++] = sample;
+            sample.Axis = Float3::Normalize(means[i]);//仅仅给SG的dir赋值
+            outSGs[currSG++] = sample;//添加到输出的SG
         }
     }
 
+    //计算sharpness
     float minDP = 1.0f;
     for(uint64 i = 1; i < numSGs; ++i)
     {
-        Float3 h = Float3::Normalize(outSGs[i].Axis + outSGs[0].Axis);
-        minDP = Min(minDP, Float3::Dot(h, outSGs[0].Axis));
+        Float3 h = Float3::Normalize(outSGs[i].Axis + outSGs[0].Axis);//0号SG与当前SG轴向的半角向量
+        minDP = Min(minDP, Float3::Dot(h, outSGs[0].Axis));//找最小
     }
-
     float sharpness = (std::log(0.65f) * numSGs) / (minDP - 1.0f);
 
     for(uint32 i = 0; i < numSGs; ++i)
-        outSGs[i].Sharpness = sharpness;
+        outSGs[i].Sharpness = sharpness;//赋值sharpness
 
     const uint64 sampleCount = 2048;
     Float2 samples[sampleCount];
-    GenerateHammersleySamples2D(samples, sampleCount);
+    GenerateHammersleySamples2D(samples, sampleCount);//获得随机采样向量
 
     for(uint32 i = 0; i < numSGs; ++i)
         outSGs[i].BasisSqIntegralOverDomain = 0.0f;
 
+    
+    //计算BasisSqIntegralOverDomain
     for(uint64 i = 0; i < sampleCount; ++i)
     {
+        //SampleDirectionSphere(samples[i].x, samples[i].y)
         Float3 dir = distribution == SGDistribution::Hemispherical ? SampleDirectionHemisphere(samples[i].x, samples[i].y)
                                                                    : SampleDirectionSphere(samples[i].x, samples[i].y);
         for(uint32 j = 0; j < numSGs; ++j)
@@ -84,8 +88,9 @@ void GenerateUniformSGs(SG* outSGs, uint64 numSGs, SGDistribution distribution)
             outSGs[j].BasisSqIntegralOverDomain += (weight * weight - outSGs[j].BasisSqIntegralOverDomain) / float(i + 1);
         }
     }
+    //int test = 1;
 }
-
+//SGDistribution::Spherical
 void InitializeSGSolver(uint64 numSGs, SGDistribution distribution)
 {
     if(eigenInitialized == false)
@@ -190,22 +195,27 @@ static void SolveSVD(SGSolveParam& params)
 }
 
 // Project sample onto SGs
+//   ProjectOntoSGs(    sampleDir,         sample,      ProjectedResult,   SGCount(12));
 void ProjectOntoSGs(const Float3& dir, const Float3& color, SG* outSGs, uint64 numSGs)
 {
     for(uint64 i = 0; i < numSGs; ++i)
     {
         SG sg1;
         SG sg2;
+
+        //sg1逐个取出已经预计算好的SG
         sg1.Amplitude = outSGs[i].Amplitude;
         sg1.Axis = outSGs[i].Axis;
         sg1.Sharpness = outSGs[i].Sharpness;
+        
+        //当前采样数据赋值给sg2
         sg2.Amplitude = color;
         sg2.Axis = Float3::Normalize(dir);
 
         if(Float3::Dot(dir, sg1.Axis) > 0.0f)
         {
             float dot = Float3::Dot(sg1.Axis, sg2.Axis);
-            float factor = (dot - 1.0f) * sg1.Sharpness;
+            float factor = (dot - 1.0f) * sg1.Sharpness;    
             float wgt = exp(factor);
             outSGs[i].Amplitude += sg2.Amplitude * wgt;
             Assert_(outSGs[i].Amplitude.x >= 0.0f);
@@ -235,11 +245,39 @@ static void SolveProjection(SGSolveParam& params)
 // on was provided by Thomas Roughton in the following article: http://torust.me/rendering/irradiance-caching/spherical-gaussians/2018/09/21/spherical-gaussians.html
 void SGRunningAverage(const Float3& dir, const Float3& color, SG* outSGs, uint64 numSGs, float sampleIdx, float* lobeWeights, bool nonNegative)
 {
+
+    //void ProjectOntoSGs(const Float3 & dir, const Float3 & color, SG * outSGs, uint64 numSGs)
+    //{
+    //    for (uint64 i = 0; i < numSGs; ++i)
+    //    {
+    //        SG sg1;
+    //        SG sg2;
+
+    //        //sg1逐个取出已经预计算好的SG
+    //        sg1.Amplitude = outSGs[i].Amplitude;
+    //        sg1.Axis = outSGs[i].Axis;
+    //        sg1.Sharpness = outSGs[i].Sharpness;
+
+    //        //当前采样数据赋值给sg2
+    //        sg2.Amplitude = color;
+    //        sg2.Axis = Float3::Normalize(dir);
+
+    //        if (Float3::Dot(dir, sg1.Axis) > 0.0f)
+    //        {
+    //            float dot = Float3::Dot(sg1.Axis, sg2.Axis);
+    //            float factor = (dot - 1.0f) * sg1.Sharpness;
+    //            float wgt = exp(factor);
+    //            outSGs[i].Amplitude += sg2.Amplitude * wgt;
+    //        }
+    //    }
+    //}
+
 	float sampleWeightScale = 1.0f / (sampleIdx + 1);
 
     float sampleLobeWeights[AppSettings::MaxSGCount] = { };
     Float3 currentEstimate;
 
+    //投影到SG
     for(uint64 lobeIdx = 0; lobeIdx < numSGs; ++lobeIdx)
     {
         float dotProduct = Float3::Dot(outSGs[lobeIdx].Axis, dir);

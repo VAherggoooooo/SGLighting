@@ -279,7 +279,7 @@ struct HL2Baker
         }
     }
 
-    void ProgressiveResult(Float4 bakeOutput[BasisCount], uint64 passIdx)
+    void ProgressiveResult(Float4 bakeOutput[BasisCount], uint64 passIdx)               
     {
         const float lerpFactor = passIdx / (passIdx + 1.0f);
         for (uint64 i = 0; i < BasisCount; ++i)
@@ -288,6 +288,7 @@ struct HL2Baker
             Float3 currValue = bakeOutput[i].To3D();
             currValue = Lerp<Float3>(newSample, currValue, lerpFactor);
             bakeOutput[i] = Float4(Float3::Clamp(currValue, -FP16Max, FP16Max), 1.0f);
+            //bakeOutput[i] = Float4(Float3::Clamp(newSample, -FP16Max, FP16Max), 1.0f);
         }
     }
 };
@@ -524,12 +525,18 @@ template<uint64 SGCount> struct SGBaker
         return SampleDirectionHemisphere(samplePoint.x, samplePoint.y);
     }
 
+
+ //baker.AddSample(       rayDirTS,           sampleIdx,        sampleResult,  rayDirWS,           bakePoint.Normal);
     void AddSample(Float3 sampleDirTS, uint64 sampleIdx, Float3 sample, Float3 sampleDirWS, Float3 normal)
     {
-        const Float3 sampleDir = AppSettings::WorldSpaceBake ? sampleDirWS : sampleDirTS;
+        //const Float3 sampleDir = AppSettings::WorldSpaceBake ? sampleDirWS : sampleDirTS;
+        const Float3 sampleDir = sampleDirWS;
         SampleDirs[CurrSampleIdx] = sampleDir;
         Samples[CurrSampleIdx] = sample;
         ++CurrSampleIdx;
+
+        ProjectOntoSGs(sampleDir, sample, ProjectedResult, SGCount);
+        return;
 
         if (AppSettings::SolveMode == SolveModes::RunningAverage)
             SGRunningAverage(sampleDir, sample, ProjectedResult, SGCount, (float)sampleIdx, RunningAverageWeights, false);
@@ -672,7 +679,7 @@ template<typename TBaker> static bool BakeDriver(BakeThreadContext& context, TBa
     // Loop over all texels in the 8x8 group, and compute 1 sample for each
     for (uint64 groupTexelIdxX = 0; groupTexelIdxX < BakeGroupSizeX; ++groupTexelIdxX)
     {
-        for (uint64 groupTexelIdxY = 0; groupTexelIdxY < BakeGroupSizeY; ++groupTexelIdxY)
+        for (uint64 groupTexelIdxY = 0; groupTexelIdxY < BakeGroupSizeY; ++groupTexelIdxY)//对于每一个纹素
         {
             const uint64 groupTexelIdx = groupTexelIdxY * BakeGroupSizeX + groupTexelIdxX;
 
@@ -735,13 +742,15 @@ template<typename TBaker> static bool BakeDriver(BakeThreadContext& context, TBa
             if (!isfinite(sampleResult.x) || !isfinite(sampleResult.y) || !isfinite(sampleResult.z))
                 sampleResult = 0.0;
 
-            baker.AddSample(rayDirTS, sampleIdx, sampleResult, rayDirWS, bakePoint.Normal);
 
-            baker.ProgressiveResult(texelResults, sampleIdx);
+            baker.AddSample(rayDirTS, sampleIdx, sampleResult, rayDirWS, bakePoint.Normal);//根据球面高斯函数, 将当前texel的结果投影到高
+
+            baker.ProgressiveResult(texelResults, sampleIdx);//当前结果与历史结果混合
 
             for (uint64 basisIdx = 0; basisIdx < TBaker::BasisCount; ++basisIdx)
             {
                 context.BakeOutput[basisIdx][texelIdx] = texelResults[basisIdx];
+                //context.BakeOutput[basisIdx][texelIdx] = Float4(20.0f, 0.0f, 0.0f, 1.0f);
             }
         }
     }

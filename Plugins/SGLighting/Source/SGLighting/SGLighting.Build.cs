@@ -40,6 +40,7 @@ public class SGLighting : ModuleRules
 				"RenderCore",
 				"RHI",
 				"ProceduralMeshComponent",
+				
 				// ... add other public dependencies that you statically link with here ...
 			}
 		);

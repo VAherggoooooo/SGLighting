@@ -324,11 +324,11 @@ Float3 PathTrace(const PathTracerParams& params, Random& randomGenerator, float&
         else if(sceneDistance < FLT_MAX)//hit scene, then checke each triangle
         {
             // We hit a triangle in the scene
-            //if(pathLength == maxPathLength)
-            //{
-            //    // There's no point in continuing anymore, since none of our scene surfaces are emissive.
-            //    break;
-            //}
+            if(pathLength == maxPathLength)
+            {
+                // There's no point in continuing anymore, since none of our scene surfaces are emissive.
+                break;
+            }
 
             const BVHData& bvh = *params.SceneBVH;
 

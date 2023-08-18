@@ -1,0 +1,236 @@
+#ifndef SG_COMMON
+#define SG_COMMON
+
+#include "/Engine/Private/Common.ush"
+#include "SGData.ush"
+
+
+
+
+//>>>>>>>>>>>>>>>>>>>> FUNCTION <<<<<<<<<<<<<<<<<<<<<<<<<
+
+// in 3  out 1
+float hash3(float3 co)
+{
+	return frac(sin(dot(co.xyz, float3(12.9898, 78.233, 53.539))) * 43758.5453);
+}
+
+// in 2  out 1
+float hash(float2 p)
+{
+	return frac(sin(dot(p, float2(12.9898, 78.233))) * 43758.5453);
+}
+
+// in 2  out 4
+float4 hash4(float2 p) 
+{ 
+	return frac(sin(float4( 1.0+dot(p,float2(37.0,17.0)), 
+						2.0+dot(p,float2(11.0,47.0)),
+						3.0+dot(p,float2(41.0,29.0)),
+						4.0+dot(p,float2(23.0,31.0))))*103.0); 
+}
+
+float ComputeLuminance(float3 color)
+{
+	return dot(color, float3(0.2126f, 0.7152f, 0.0722f));
+}
+
+
+// get normalized random vector
+float3 GetRandomDir(float3 normal, float3 pos, float2 uv)
+{
+	float3 randDir = hash4(float2(hash3(pos), hash(uv * seed))).xyz;
+
+	randDir = randDir * 2.0 - 1.0;
+	randDir = dot(randDir, normal) > 0? randDir : -randDir;
+
+	return normalize(randDir);
+}
+
+
+
+
+
+
+
+HitInfo GetHitInfo(float3 _pos, float3 _normal, float2 _uv, float3 _color, float _hitTime)
+{
+	HitInfo outInfo;
+	outInfo.pos = _pos;
+	outInfo.normal = _normal;
+	outInfo.uv = _uv;
+	outInfo.color = _color;
+	outInfo.hitTime = _hitTime;
+	outInfo.didHit = false;
+	return outInfo;
+}
+
+Ray GetRay(float3 _ori, float3 _dir, float2 _uv, float3 _curNormal)
+{
+	Ray r;
+	r.ori = _ori;
+	r.dir = _dir;
+	r.uv = _uv;
+	r.curNormal = _curNormal;
+	return r;
+}
+
+
+HitInfo HitChecke(Ray _ray)
+{
+	//TODO: 使用BVH加速结构
+	HitInfo outInfo = GetHitInfo(_ray.ori, 0, _ray.uv, 0, RAY_MAXTIME + 5);
+	for(int i = 0; i < TriangleNum; i++)
+	{
+		FMeshTriangle t = TriangleBuffer[i];
+
+		float3 normalFace = -cross(t.B - t.A, t.C - t.B);
+		if(dot(normalFace, _ray.dir) > 0) continue;//反面
+	
+		float hitTime = dot((t.A - _ray.ori), normalFace) / dot(_ray.dir, normalFace);
+		if(hitTime < 0 || hitTime > RAY_MAXTIME)
+			continue;
+	
+		float3 hitPos = hitTime * _ray.dir + _ray.ori;
+		float3 pa = hitPos - t.A;
+		float3 pb = hitPos - t.B;
+		float3 pc = hitPos - t.C;
+		float3 ba = t.B - t.A;
+		float3 cb = t.C - t.B;
+		float3 ac = t.A - t.C;
+	
+		float3 crs1 = cross(pa, ba);
+		float3 crs2 = cross(pb, cb);
+		float3 crs3 = cross(pc, ac);
+
+		if((dot(crs1, crs2) >= 0) && (dot(crs3, crs2) >= 0))//射线与三角形正面相交
+			{
+			outInfo.didHit = true;
+			if(hitTime < outInfo.hitTime)
+			{
+				outInfo.hitTime = hitTime;
+				outInfo.pos = hitTime * _ray.dir + _ray.ori;
+
+				//TODO: 找到最近的相交点后, 获得材质属性
+				float3 edgeAB = t.B - t.A;
+				float3 edgeAC = t.C - t.A;
+				float3 normalVector = cross(edgeAB, edgeAC);
+				float3 ao = _ray.ori - t.A;
+				float3 dao = cross(ao, _ray.dir);
+
+				float determinant = -dot(_ray.dir, normalVector);
+				float invDet = 1 / determinant;
+				
+				float dst = dot(ao, normalVector) * invDet;
+				float u = dot(edgeAC, dao) * invDet;
+				float v = -dot(edgeAB, dao) * invDet;
+				float w = 1 - u - v;
+				//outInfo.normal = normalize(t.A * w + t.NormalB * u + t.NormalC * v);//TODO: 不太对??
+
+
+				outInfo.normal = normalize(normalFace);//TODO: 三角面的法线不代表击中点的法线, 需要插值
+			}
+			}
+	}
+	
+	
+	return outInfo;
+}
+
+
+float3 SampleSun(Ray _ray, FMainLight _Light)
+{
+	//TODO: 获得光照强度
+	Ray toLight;
+	toLight.ori = _ray.ori;
+	toLight.dir = -_Light.LightDir;
+	HitInfo info = HitChecke(toLight);
+	if(info.didHit) return 0;
+	
+	float LdotN = saturate(dot(toLight.dir, _ray.curNormal));
+	return LdotN * _Light.LightIntensity *_Light.LightColor;
+}
+
+
+float3 PathTracingShading(Ray _ray, int _depth, FMainLight _Light)
+{
+	float3 finalLight = 0;
+	float3 rayColour = 1;
+	
+	if(_depth <= 0) return finalLight;
+	
+	for(uint i = 0; i < _depth; i++)//_depth
+		{
+		HitInfo info = HitChecke(_ray);
+		if(info.didHit)
+		{
+			float3 fromDir = _ray.dir;
+			float3 fromNor = _ray.curNormal;
+			float3 newDir = GetRandomDir(info.normal, info.pos, _ray.uv);
+
+			//把采样点挪到击中点, 并随机新的方向
+			_ray.ori = info.pos;
+			_ray.dir = newDir;
+			_ray.curNormal = info.normal;
+
+			float3 sunLight = SampleSun(_ray, _Light);
+			rayColour *= sunLight * 1.2;// /  PI;
+			//rayColour *= sunLight * PI;
+			
+			//rayColour *= saturate(dot(fromNor, fromDir));
+			if(max(rayColour.x, max(rayColour.y, rayColour.z)) < 0.1)
+			{
+				break;
+			}
+			finalLight += rayColour;
+			
+			//finalLight += SampleSun(_ray, _Light) * saturate(dot(fromDir, fromNor));//TODO: 看起来很对, 但还需验证(深井)
+			
+		}
+		else//TODO: 计算天光
+		{
+			//finalLight += rayColour * 0.95 * saturate(_ray.dir.z);
+			break;
+		}
+	}
+	return finalLight;
+}
+
+
+FSG CopySG(FSG target)
+{
+	FSG OutSG;
+	OutSG.Amplitude = target.Amplitude;
+	OutSG.Axis = target.Axis;
+	OutSG.Sharpness = target.Sharpness;
+	OutSG.BasisSqIntegralOverDomain = target.BasisSqIntegralOverDomain;
+	return OutSG;
+}
+
+
+float3 ProjectOntoSGs(float3 dir, float3 color, FSG curSG)
+{
+	float3 outSGAmplitude = 0;
+	float3 outColor = 0;
+	if (dot(dir, curSG.Axis) > 0.0)
+	{
+		float dott = dot(curSG.Axis, dir);
+		float factor = (dott - 1.0) * curSG.Sharpness;
+		float wgt = exp(factor);
+		
+		float3 Amplitude = color * wgt;
+		outSGAmplitude += Amplitude;
+		//outColor += dott * color;
+		outColor += Amplitude;
+	}
+	// if(outColor.x <0 || outColor.y <0 || outColor.z < 0)
+	// {
+	// 	outColor = float3(1.0, 0.0, 0.0);
+	// }
+	return outColor;
+}
+
+
+
+#endif
+ 

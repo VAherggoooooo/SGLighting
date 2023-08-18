@@ -28,7 +28,8 @@ UCLASS(MinimalAPI, meta = (ScriptName = "SimpleRenderingExample"))
 class UMakeLightmapBlueprintLibrary : public UBlueprintFunctionLibrary
 {
 	GENERATED_BODY()
-	
+
+public:	
 	UFUNCTION(BlueprintCallable, Category = "SG Lightmap", meta = (WorldContext = "WorldContextObject"))
 	static void UseRDGComput(const UObject* WorldContextObject, UTextureRenderTarget2D* OutputRenderTarget);
 
