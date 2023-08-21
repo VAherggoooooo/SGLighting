@@ -85,6 +85,7 @@ public:
 	UPROPERTY(EditAnywhere)
 	TArray<UTextureRenderTarget2D*> SGRTs_Cur;
 
+	
 	UFUNCTION(BlueprintCallable)
 	void ClearMap();
 

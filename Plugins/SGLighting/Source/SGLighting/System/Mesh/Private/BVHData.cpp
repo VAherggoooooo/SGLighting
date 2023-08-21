@@ -49,6 +49,7 @@ void UBVHData::GetAllMeshInfo(TArray<FVector>& _Vertices, TArray<FVector3f>& _Po
 {
 	if(MeshCollecter == nullptr) return;
 	TArray<UStaticMesh*> staticMeshes = MeshCollecter->GetAllStaticMeshesInLevel();
+	
 	// TArray<FVector> VerticeIDs;
 	// TArray<int32> TriangleVertexIDs;
 	// TArray<FVector> Normals;
@@ -57,6 +58,7 @@ void UBVHData::GetAllMeshInfo(TArray<FVector>& _Vertices, TArray<FVector3f>& _Po
 	
 	for (UStaticMesh* mesh : staticMeshes)
 	{
+		UE_LOG(LogTemp, Warning, TEXT("%s has %d Sections"), *(mesh->GetName()), mesh->GetNumSections(mesh->GetMinLODIdx()));
 		
 		for(int sectionID = 0; sectionID < mesh->GetNumSections(mesh->GetMinLODIdx()); sectionID++)
 		{

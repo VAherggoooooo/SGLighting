@@ -174,16 +174,18 @@ float3 PathTracingShading(Ray _ray, int _depth, FMainLight _Light)
 			_ray.curNormal = info.normal;
 	
 			float3 sunLight = SampleSun(_ray, _Light);
-			rayColour *= sunLight * 1.2;// /  PI;
+			//rayColour += sunLight;// /  PI;
 			//rayColour *= sunLight * PI;
 			
-			//rayColour *= saturate(dot(fromNor, fromDir));
+			
+			rayColour *= saturate(dot(info.normal, newDir));
+			//rayColour /= PI;
 			if(max(rayColour.x, max(rayColour.y, rayColour.z)) < 0.02)
 			{
 				break;
 			}
-			finalLight += rayColour;
 			
+			finalLight += rayColour * sunLight * PI;
 			//finalLight += SampleSun(_ray, _Light) * saturate(dot(fromDir, fromNor));//TODO: 看起来很对, 但还需验证(深井)
 			
 		}
@@ -208,14 +210,31 @@ FSG CopySG(FSG target)
 }
 
 
-float3 ProjectOntoSGs(float3 dir, float3 color, FSG curSG)
+float3 ProjectOntoSGs(float3 dir, float3 color, FSG curSG, int id)
 {
+	// float3 sgdirs[12] = {
+	// 	float3(1,0,0),
+	// 	float3(0,1,0),
+	// 	float3(0,0,1),
+	// 	float3(-1,0,0),
+	// 	float3(0,-1,0),
+	// 	float3(0,0,-1),
+	// 	float3(0,0,0),
+	// 	float3(0,0,0),
+	// 	float3(0,0,0),
+	// 	float3(0,0,0),
+	// 	float3(0,0,0),
+	// 	float3(0,0,0)
+	// };
+	//curSG.Axis = sgdirs[id];
+	if(length(curSG.Axis) < 0.001) return 0;
+	
 	float3 outSGAmplitude = 0;
 	float3 outColor = 0;
 	if (dot(dir, curSG.Axis) > 0.0)
 	{
 		float dott = dot(curSG.Axis, dir);
-		float factor = (dott - 1.0) * curSG.Sharpness;
+		float factor = (dott - 1.0) * curSG.Sharpness;//curSG.Sharpness 7.254528
 		float wgt = exp(factor);
 		
 		float3 Amplitude = color * wgt;

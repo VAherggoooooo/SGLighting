@@ -47,7 +47,7 @@ void MainCS(uint3 ThreadId : SV_DispatchThreadID)
 		//TODO: 投射到SG
 		for(int j = 0; j <SG_NUM; j++)
 		{
-			dirColor[j] += ProjectOntoSGs(rayDir, rayColor, SGBuffer[j]);
+			dirColor[j] += ProjectOntoSGs(rayDir, rayColor, SGBuffer[j], j);
 		}
 	}
 	finalColor /= SampleCount;

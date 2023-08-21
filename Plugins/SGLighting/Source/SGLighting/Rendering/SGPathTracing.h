@@ -57,6 +57,10 @@ public:
 		SHADER_PARAMETER_TEXTURE(Texture2D, InNormal)
 		SHADER_PARAMETER_SAMPLER(SamplerState, InNormalSampler)
 
+		SHADER_PARAMETER_TEXTURE(Texture2D, Albedo)
+		SHADER_PARAMETER_SAMPLER(SamplerState, AlbedoSampler)
+	
+
 		SHADER_PARAMETER_TEXTURE(Texture2D, InTangent)
 		SHADER_PARAMETER_SAMPLER(SamplerState, InTangentSampler)
 
