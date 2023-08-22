@@ -104,7 +104,11 @@ void UBVHData::GetAllMeshInfo(TArray<FVector>& _Vertices, TArray<FVector3f>& _Po
 				FVector3f NormalA = FVector3f(_Normals[_VertexIDs[id]]);
 				FVector3f NormalB = FVector3f(_Normals[_VertexIDs[id + 1]]);
 				FVector3f NormalC = FVector3f(_Normals[_VertexIDs[id + 2]]);
-				trian.Add(FMeshTriangle(A,B,C, NormalA, NormalB, NormalC));
+				FVector2f UV_A = FVector2f(_UVs2[_VertexIDs[id]]);
+				FVector2f UV_B = FVector2f(_UVs2[_VertexIDs[id + 1]]);
+				FVector2f UV_C = FVector2f(_UVs2[_VertexIDs[id + 2]]);
+				trian.Add(FMeshTriangle(A,B,C, NormalA, NormalB, NormalC, UV_A, UV_B, UV_C));
+				//trian.Add(FMeshTriangle(A,B,C, NormalA, NormalB, NormalC));
 			}
 			_Triangles.Append(trian);
 			

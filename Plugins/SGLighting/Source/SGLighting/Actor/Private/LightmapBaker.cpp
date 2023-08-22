@@ -24,11 +24,13 @@ ALightmapBaker::ALightmapBaker()
 	RootComponent = Root;
 
 	
-	SM_BlurMap = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("BlurMap"));
+	SM_BlendMap = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("BlendMap"));
 	SM_CopyMap = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("CopyMap"));
+	SM_BlurMap = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("BlurMap"));
 
-	SM_BlurMap->SetupAttachment(Root);
+	SM_BlendMap->SetupAttachment(Root);
 	SM_CopyMap->SetupAttachment(Root);
+	SM_BlurMap->SetupAttachment(Root);
 }
 
 void ALightmapBaker::OnConstruction(const FTransform& Transform)
@@ -53,7 +55,7 @@ void ALightmapBaker::TestBake()
 {
 	InitSGs();
 	UMakeLightmapBlueprintLibrary::UseRDGDraw(nullptr, Position, Normal, Tangent);
-	PathTracingInLightmap(RT1, Position, Normal, Tangent, MainLight, SampleCount, Depth, Frame, RT4, SGRTs);
+	PathTracingInLightmap(RT1, Position, Normal, Tangent, MainLight, SampleCount, Depth, Frame, RT4, SGRTs, MaxFallOff);
 }
 
 void ALightmapBaker::InitSGs()
@@ -80,7 +82,7 @@ void ComputePathTracing(
 	float seed,
 	FTexture2DRHIRef TestTexture,
 	TArray<FSG_Full>& SGs,
-	TArray<FTexture2DRHIRef> OutSGRTs)
+	TArray<FTexture2DRHIRef> OutSGRTs, FTexture2DRHIRef InAlbedoTex, float MaxFallOff)
 {
 	check(IsInRenderingThread());
 
@@ -163,13 +165,15 @@ void ComputePathTracing(
 		}
 		
 	}
+	Parameters->Albedo = InAlbedoTex;
+	Parameters->AlbedoSampler = TStaticSamplerState<SF_Trilinear, AM_Clamp, AM_Clamp, AM_Clamp>::GetRHI();
 	
 	Parameters->InPosition = Position_RT;
-	Parameters->InPositionSampler = TStaticSamplerState<SF_Trilinear, AM_Clamp, AM_Clamp, AM_Clamp>::GetRHI();
+	Parameters->InPositionSampler = TStaticSamplerState<SF_Point, AM_Clamp, AM_Clamp, AM_Clamp>::GetRHI();
 	Parameters->InNormal = Normal_RT;
-	Parameters->InNormalSampler = TStaticSamplerState<SF_Trilinear, AM_Clamp, AM_Clamp, AM_Clamp>::GetRHI();
+	Parameters->InNormalSampler = TStaticSamplerState<SF_Point, AM_Clamp, AM_Clamp, AM_Clamp>::GetRHI();
 	Parameters->InTangent = Tangent_RT;
-	Parameters->InTangentSampler = TStaticSamplerState<SF_Trilinear, AM_Clamp, AM_Clamp, AM_Clamp>::GetRHI();
+	Parameters->InTangentSampler = TStaticSamplerState<SF_Point, AM_Clamp, AM_Clamp, AM_Clamp>::GetRHI();
 	
 	FRDGBufferRef TriBuffer = CreateStructuredBuffer(GraphBuilder, TEXT("TriangleDataBuffer"), GRectangleVertexBuffer.SceneMeshTriangles,ERDGInitialDataFlags::NoCopy);//GRectangleVertexBuffer.MeshTriangles
 	Parameters->TriangleBuffer = GraphBuilder.CreateSRV(TriBuffer);
@@ -184,7 +188,7 @@ void ComputePathTracing(
 	MainLights.Add(_L);
 	FRDGBufferRef MainLightBuff = CreateStructuredBuffer(GraphBuilder, TEXT("MainLightDataBuffer"), MainLights,ERDGInitialDataFlags::NoCopy);//GRectangleVertexBuffer.MeshTriangles
 	Parameters->MainLightBuffer = GraphBuilder.CreateSRV(MainLightBuff);
-
+	Parameters->MaxFallOff = MaxFallOff;
 	TArray<FSG> FSGs;
 	for(FSG_Full sgf : SGs)
 	{
@@ -241,7 +245,7 @@ void ALightmapBaker::PathTracingInLightmap(UTextureRenderTarget2D* OutputRT,
                                            UTextureRenderTarget2D* Position_RT, UTextureRenderTarget2D* Normal_RT, UTextureRenderTarget2D* Tangent_RT,
                                            ADirectionalLight* mainLight, uint8 sampleCount, uint8 depth,
                                            float seed, UTextureRenderTarget2D* TestTexture,
-                                           TArray<UTextureRenderTarget2D* >& OutSGRTs)
+                                           TArray<UTextureRenderTarget2D* >& OutSGRTs, float _MaxFallOff)
 {
 	check(IsInGameThread());
 
@@ -250,7 +254,7 @@ void ALightmapBaker::PathTracingInLightmap(UTextureRenderTarget2D* OutputRT,
 	FTexture2DRHIRef normalRT = Normal_RT->GameThread_GetRenderTargetResource()->GetRenderTargetTexture();
 	FTexture2DRHIRef tangentRT = Tangent_RT->GameThread_GetRenderTargetResource()->GetRenderTargetTexture();
 
-	
+	FTexture2DRHIRef InAlbedoTex = AlbedoTex->GetResource()->TextureRHI->GetTexture2D();
 	
 	FTexture2DRHIRef testTextureRT = TestTexture->GameThread_GetRenderTargetResource()->GetRenderTargetTexture();
 
@@ -264,9 +268,12 @@ void ALightmapBaker::PathTracingInLightmap(UTextureRenderTarget2D* OutputRT,
 	
 	ENQUEUE_RENDER_COMMAND(CaptureCommand)
 	(
-		[RenderTargetRHI, positionRT, normalRT, tangentRT, mainLight, sampleCount, depth, seed, testTextureRT, SGRT_Ref](FRHICommandListImmediate &RHICmdList)
+		[RenderTargetRHI, positionRT, normalRT, tangentRT, mainLight, sampleCount, depth, seed, testTextureRT, SGRT_Ref, InAlbedoTex, _MaxFallOff](FRHICommandListImmediate &RHICmdList)
 		{
-			ComputePathTracing(RHICmdList, RenderTargetRHI, positionRT, normalRT, tangentRT, mainLight, sampleCount, depth, seed, testTextureRT, ALightmapBaker::OutSGs, SGRT_Ref);
+			ComputePathTracing(
+				RHICmdList, RenderTargetRHI,
+				positionRT, normalRT, tangentRT,
+				mainLight, sampleCount, depth, seed, testTextureRT, ALightmapBaker::OutSGs, SGRT_Ref, InAlbedoTex, _MaxFallOff);
 		}
 	);
 }
@@ -280,8 +287,9 @@ void ALightmapBaker::BeginPlay()
 	Super::BeginPlay();
 	InitSGs();
 	
-	Dy_Blur = SM_BlurMap->CreateDynamicMaterialInstance(0, SM_BlurMap->GetMaterial(0));
+	Dy_Blend = SM_BlendMap->CreateDynamicMaterialInstance(0, SM_BlendMap->GetMaterial(0));
 	Dy_Copy = SM_CopyMap->CreateDynamicMaterialInstance(0, SM_CopyMap->GetMaterial(0));
+	Dy_Blur = SM_BlurMap->CreateDynamicMaterialInstance(0, SM_BlurMap->GetMaterial(0));
 
 	// for(int i = 0; i < SG_NUM; i++)
 	// {
@@ -302,13 +310,13 @@ void ALightmapBaker::Tick(float DeltaTime)
 	{
 		//USGPathTracing::PathTracingInLightmap(nullptr, RT1, Position, Normal, Tangent, MainLight, SampleCount, Depth, Frame, RT4);
 		//PathTracingInLightmap(RT1, Position, Normal, Tangent, MainLight, SampleCount, Depth, Frame, RT4, SGRTs);
-		PathTracingInLightmap(RT1, Position, Normal, Tangent, MainLight, SampleCount, Depth, Frame, RT4, SGRTs_Cur);
+		PathTracingInLightmap(RT1, Position, Normal, Tangent, MainLight, SampleCount, Depth, Frame, RT4, SGRTs_Cur, MaxFallOff);
 
-		Dy_Blur->SetScalarParameterValue(FName("Fram"), Frame);
+		Dy_Blend->SetScalarParameterValue(FName("Fram"), Frame);
 		
-		// Dy_Blur->SetTextureParameterValue(FName("PreMap"), RT2);
-		// Dy_Blur->SetTextureParameterValue(FName("CurMap"), RT1);
-		// UKismetRenderingLibrary::DrawMaterialToRenderTarget(this, RT3, Dy_Blur);
+		// Dy_Blend->SetTextureParameterValue(FName("PreMap"), RT2);
+		// Dy_Blend->SetTextureParameterValue(FName("CurMap"), RT1);
+		// UKismetRenderingLibrary::DrawMaterialToRenderTarget(this, RT3, Dy_Blend);
 
 		// Dy_Copy->SetTextureParameterValue(FName("OriTex"), RT3);
 		// UKismetRenderingLibrary::DrawMaterialToRenderTarget(this, RT2, Dy_Copy);
@@ -324,6 +332,13 @@ void ALightmapBaker::Tick(float DeltaTime)
 
 		if(Frame >= MaxBakeTime)
 		{
+			for(int i = 0; i < BlurTimes; i++)
+			{
+				for(int j = 0; j < SG_NUM; j++)
+				{
+					BlurTexture(SGRTs[j], SGRTs_Temp[j], SGRTs[j]);
+				}
+			}
 			UKismetSystemLibrary::PrintString(this, FString("Bake Over"));
 		}
 	}
@@ -332,12 +347,29 @@ void ALightmapBaker::Tick(float DeltaTime)
 void ALightmapBaker::BlendTexture(UTextureRenderTarget2D* PreTex, UTextureRenderTarget2D* CurTex,
 	UTextureRenderTarget2D* OutTex)
 {
-	if(Dy_Blur == nullptr || Dy_Copy == nullptr) return;
-	Dy_Blur->SetTextureParameterValue(FName("PreMap"), PreTex);
-	Dy_Blur->SetTextureParameterValue(FName("CurMap"), CurTex);
-	UKismetRenderingLibrary::DrawMaterialToRenderTarget(this, OutTex, Dy_Blur);
+	if(Dy_Blend == nullptr || Dy_Copy == nullptr) return;
 
+	//blend texture
+	Dy_Blend->SetTextureParameterValue(FName("PreMap"), PreTex);
+	Dy_Blend->SetTextureParameterValue(FName("CurMap"), CurTex);
+	UKismetRenderingLibrary::DrawMaterialToRenderTarget(this, OutTex, Dy_Blend);
+
+	//copy texture
 	Dy_Copy->SetTextureParameterValue(FName("OriTex"), OutTex);
 	UKismetRenderingLibrary::DrawMaterialToRenderTarget(this, PreTex, Dy_Copy);
 }
 
+void ALightmapBaker::BlurTexture(UTextureRenderTarget2D* CurTex, UTextureRenderTarget2D* TempTex,
+	UTextureRenderTarget2D* OutTex)
+{
+	//TODO: 模糊curtex输出到temptex, 再拷贝到outtex
+	Dy_Blur->SetTextureParameterValue(FName("CurTex"), CurTex);
+	Dy_Blur->SetScalarParameterValue(FName("BlurIntensity"), BlurIntensity);
+
+	UKismetRenderingLibrary::DrawMaterialToRenderTarget(this, TempTex, Dy_Blur);
+
+	//copy texture
+	Dy_Copy->SetTextureParameterValue(FName("OriTex"), TempTex);
+	UKismetRenderingLibrary::DrawMaterialToRenderTarget(this, OutTex, Dy_Copy);
+	
+}

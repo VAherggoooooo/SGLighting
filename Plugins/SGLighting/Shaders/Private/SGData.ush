@@ -18,6 +18,9 @@ struct FMeshTriangle
 	float3 NormalA;
 	float3 NormalB;
 	float3 NormalC;
+	float2 UV_A;
+	float2 UV_B;
+	float2 UV_C;
 };
 
 struct FMainLight
@@ -91,10 +94,12 @@ RWTexture2D<float4> SG12;
 Texture2D InPosition;
 Texture2D InNormal;
 Texture2D InTangent;
+Texture2D Albedo;
 
 SamplerState InPositionSampler;
 SamplerState InNormalSampler;
 SamplerState InTangentSampler;
+SamplerState AlbedoSampler;
 
 float3 MainLightDir;
 
@@ -103,6 +108,7 @@ float seed;
 int TriangleNum;
 int depth;
 int SampleCount;
+float MaxFallOff;
 
 
 

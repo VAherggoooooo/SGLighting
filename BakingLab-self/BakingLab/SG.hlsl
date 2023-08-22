@@ -313,7 +313,7 @@ float3 SpecularTermSGWarp(in SG light, in float3 normal, in float roughness,
     // Cosine term evaluated at the center of our warped BRDF lobe
     output *= nDotL;
 
-    return max(output, 0.0f);
+    return max(0.0f, 0.0f);//output
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -356,7 +356,7 @@ float3 SpecularTermASGWarp(in SG light, in float3 normal, in float roughness,
     // Cosine term evaluated at the center of our warped BRDF lobe
     output *= nDotL;
 
-    return max(output, 0.0f);
+    return max(output, 0.0f);//output
 }
 
 //-------------------------------------------------------------------------------------------------

@@ -30,14 +30,18 @@ public:
 
 	
 	UPROPERTY(EditAnywhere)
-	UStaticMeshComponent* SM_BlurMap;
+	UStaticMeshComponent* SM_BlendMap;
 
 	UPROPERTY(EditAnywhere)
 	UStaticMeshComponent* SM_CopyMap;
 
+	UPROPERTY(EditAnywhere)
+	UStaticMeshComponent* SM_BlurMap;
 
-	UMaterialInstanceDynamic* Dy_Blur;
+
+	UMaterialInstanceDynamic* Dy_Blend;
 	UMaterialInstanceDynamic* Dy_Copy;
+	UMaterialInstanceDynamic* Dy_Blur;
 
 
 	UPROPERTY(EditAnywhere)
@@ -69,10 +73,19 @@ public:
 	UPROPERTY(EditAnywhere)
 	int Depth = 2;
 
+	UPROPERTY(EditAnywhere)
+	float MaxFallOff = 3.2f;
+
 	float Frame;
 
 	UPROPERTY(EditAnywhere)
 	int MaxBakeTime = 150;
+
+	UPROPERTY(EditAnywhere)
+	int BlurTimes = 4;
+
+	UPROPERTY(EditAnywhere)
+	float BlurIntensity = 2.4f;
 	
 	static TArray<FSG_Full> OutSGs;
 
@@ -85,6 +98,8 @@ public:
 	UPROPERTY(EditAnywhere)
 	TArray<UTextureRenderTarget2D*> SGRTs_Cur;
 
+	UPROPERTY(EditAnywhere)
+	UTexture2D* AlbedoTex;
 	
 	UFUNCTION(BlueprintCallable)
 	void ClearMap();
@@ -104,7 +119,7 @@ public:
 		UTextureRenderTarget2D* Normal_RT, UTextureRenderTarget2D* Tangent_RT,
 		ADirectionalLight* mainLight, uint8 sampleCount, uint8 depth,
 		float seed, UTextureRenderTarget2D* TestTexture,
-		TArray<UTextureRenderTarget2D* >& OutSGRTs);
+		TArray<UTextureRenderTarget2D* >& OutSGRTs, float _MaxFallOff);
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -114,7 +129,10 @@ public:
 	virtual void Tick(float DeltaTime) override;
 
 	void BlendTexture(UTextureRenderTarget2D* PreTex, UTextureRenderTarget2D* CurTex, UTextureRenderTarget2D* OutTex);
+	void BlurTexture(UTextureRenderTarget2D* CurTex, UTextureRenderTarget2D* TempTex, UTextureRenderTarget2D* OutTex);
 };
+
+
 
 
 void ComputePathTracing(
@@ -129,4 +147,4 @@ void ComputePathTracing(
 	float seed,
 	FTexture2DRHIRef TestTexture,
 	TArray<FSG_Full>& OutSGs,
-	TArray<FTexture2DRHIRef> OutSGRTs);
+	TArray<FTexture2DRHIRef> OutSGRTs, FTexture2DRHIRef InAlbedoTex, float MaxFallOff);

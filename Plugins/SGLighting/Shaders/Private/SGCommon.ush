@@ -126,8 +126,9 @@ HitInfo HitChecke(Ray _ray)
 				float v = -dot(edgeAB, dao) * invDet;
 				float w = 1 - u - v;
 				//outInfo.normal = normalize(t.A * w + t.NormalB * u + t.NormalC * v);//TODO: 不太对??
-
-
+				float2 outuv = t.UV_A * w + t.UV_B * u + t.UV_C * v;
+				float3 albedoCol = Albedo.Sample(AlbedoSampler, outuv).xyz;
+				outInfo.color = albedoCol;
 				outInfo.normal = normalize(normalFace);//TODO: 三角面的法线不代表击中点的法线, 需要插值
 			}
 			}
@@ -178,14 +179,14 @@ float3 PathTracingShading(Ray _ray, int _depth, FMainLight _Light)
 			//rayColour *= sunLight * PI;
 			
 			
-			rayColour *= saturate(dot(info.normal, newDir));
+			rayColour *= saturate(dot(info.normal, newDir)) * info.color * 1.2; /// max(1, min(MaxFallOff, (info.hitTime * info.hitTime)));
 			//rayColour /= PI;
 			if(max(rayColour.x, max(rayColour.y, rayColour.z)) < 0.02)
 			{
 				break;
 			}
 			
-			finalLight += rayColour * sunLight * PI;
+			finalLight += rayColour * sunLight * PI / max(1, min(MaxFallOff, (info.hitTime * info.hitTime)));
 			//finalLight += SampleSun(_ray, _Light) * saturate(dot(fromDir, fromNor));//TODO: 看起来很对, 但还需验证(深井)
 			
 		}

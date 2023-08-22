@@ -19,9 +19,21 @@ struct FMeshTriangle
 	FVector3f NormalA;
 	FVector3f NormalB;
 	FVector3f NormalC;
+	FVector2f UV_A;
+	FVector2f UV_B;
+	FVector2f UV_C;
 
-	FMeshTriangle(){A = FVector3f(); B = FVector3f(); C = FVector3f(); NormalA = FVector3f(); NormalB = FVector3f(); NormalC = FVector3f();}
-	FMeshTriangle(FVector3f _A, FVector3f _B, FVector3f _C, FVector3f _NormalA, FVector3f _NormalB, FVector3f _NormalC)
+	FMeshTriangle()
+	{
+		A = FVector3f(); B = FVector3f(); C = FVector3f();
+		NormalA = FVector3f(); NormalB = FVector3f(); NormalC = FVector3f();
+		UV_A = FVector2f(); UV_B = FVector2f(); UV_C = FVector2f(); 
+	}
+	FMeshTriangle(
+		FVector3f _A, FVector3f _B, FVector3f _C,
+		FVector3f _NormalA, FVector3f _NormalB, FVector3f _NormalC
+		,FVector2f _UV_A, FVector2f _UV_B, FVector2f _UV_C
+		)
 	{
 		A = _A;
 		B = _B;
@@ -29,6 +41,9 @@ struct FMeshTriangle
 		NormalA = _NormalA;
 		NormalB = _NormalB;
 		NormalC = _NormalC;
+		UV_A = _UV_A;
+		UV_B = _UV_B;
+		UV_C = _UV_C;
 	}
 };
 
