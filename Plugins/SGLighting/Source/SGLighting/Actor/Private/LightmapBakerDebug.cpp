@@ -1,7 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "LightmapBakerDebug.h"
+#include "SGLighting/Actor/Public/LightmapBakerDebug.h"
 
 #include "Components/ArrowComponent.h"
 #include "Kismet/KismetMathLibrary.h"
@@ -32,6 +32,16 @@ void ALightmapBakerDebug::DebugSGDirs()
 	}
 	UE_LOG(LogTemp, Warning, TEXT("sharpness %f"), OutSGs[7].Sharpness);
 	
+}
+
+TArray<FVector>& ALightmapBakerDebug::DebugSceneInfo()
+{
+	UBVHData* bvh = NewObject<UBVHData>();
+	bvh->Init(nullptr);
+	bvh->GetSceneData();
+
+	poses.Append(bvh->VerticeIDs);
+	return bvh->VerticeIDs;
 }
 
 void ALightmapBakerDebug::Tick(float DeltaSeconds)

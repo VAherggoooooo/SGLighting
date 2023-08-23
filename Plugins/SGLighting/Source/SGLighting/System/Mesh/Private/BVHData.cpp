@@ -1,6 +1,8 @@
 
 #include "SGLighting/System/Mesh/Public/BVHData.h"
 #include "KismetProceduralMeshLibrary.h"
+#include "ProceduralMeshComponent.h"
+#include "Engine/StaticMeshActor.h"
 
 UBVHData::UBVHData()
 {
@@ -48,19 +50,29 @@ int32 UBVHData::GetTrangleNum(bool bPrintNum, bool bPrintSM, bool bStatic) const
 void UBVHData::GetAllMeshInfo(TArray<FVector>& _Vertices, TArray<FVector3f>& _Position, TArray<int32>& _VertexIDs, TArray<FVector>& _Normals, TArray<FVector2D>& _UVs, TArray<FVector2D>& _UVs2, TArray<FProcMeshTangent>& _Tangents, TArray<FMeshTriangle>& _Triangles)
 {
 	if(MeshCollecter == nullptr) return;
-	TArray<UStaticMesh*> staticMeshes = MeshCollecter->GetAllStaticMeshesInLevel();
-	
-	// TArray<FVector> VerticeIDs;
-	// TArray<int32> TriangleVertexIDs;
-	// TArray<FVector> Normals;
-	// TArray<FVector2D> UVs;
-	// TArray<FProcMeshTangent> Tangents;
+	TArray<AActor*> staticMesheActors = MeshCollecter->GetAllStaticMeshActors(false, true);
+	TArray<UStaticMesh*> staticMeshes;
+	for(AActor* aa : staticMesheActors)
+	{
+		AStaticMeshActor* sma = Cast<AStaticMeshActor>(aa);
+		TObjectPtr<UStaticMesh> mm = sma->GetStaticMeshComponent()->GetStaticMesh();
+		if(mm != nullptr)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("mesh: %s"), *(mm->GetName()));
+			staticMeshes.Add(mm);
+		}
+	}
+
+	if(staticMeshes.Num() <= 0)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("NULL MESH"));
+		return;
+	}
 	
 	for (UStaticMesh* mesh : staticMeshes)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s has %d Sections"), *(mesh->GetName()), mesh->GetNumSections(mesh->GetMinLODIdx()));
-		
-		for(int sectionID = 0; sectionID < mesh->GetNumSections(mesh->GetMinLODIdx()); sectionID++)
+		int curSectionIDOffset = 0;
+		for(int sectionID = 0; sectionID < mesh->GetNumSections(mesh->GetMinLODIdx()); sectionID++)//mesh->GetNumSections(mesh->GetMinLODIdx())
 		{
 			TArray<FVector> v;
 			TArray<FVector3f> p;
@@ -69,51 +81,41 @@ void UBVHData::GetAllMeshInfo(TArray<FVector>& _Vertices, TArray<FVector3f>& _Po
 			TArray<FVector2D> uv;
 			TArray<FVector2D> uv2;
 			TArray<FProcMeshTangent> tan;
-			UKismetProceduralMeshLibrary::GetSectionFromStaticMesh(mesh, mesh->GetMinLODIdx(), sectionID, v, tri, n, uv, tan);
 
-			//添加light uv
-			const FStaticMeshLODResources& LOD = mesh->GetRenderData()->LODResources[mesh->GetMinLODIdx()];
-			if (LOD.Sections.IsValidIndex(0))
+			GetSectionFromStaticMesh(mesh, mesh->GetMinLODIdx(), sectionID, v, tri, n, uv2, tan);
+			
+			for(int ti = 0; ti < tri.Num(); ti++)
 			{
-				for (int32 i = 0; i < v.Num(); i++)
-				{
-					FVector2f curUV = LOD.VertexBuffers.StaticMeshVertexBuffer.GetVertexUV(i, 1);
-					uv2.Add(FVector2d(curUV.X,  curUV.Y));
-					
-					FVector3f curPos = LOD.VertexBuffers.PositionVertexBuffer.VertexPosition(i);
-					FVector3f cp = FVector3f(curPos.X, curPos.Y, curPos.Z);
-					p.Add(cp);
-					//UE_LOG(LogTemp, Warning, TEXT("localPos: (%f, %f, %f)"), cp.X, cp.Y, cp.Z);
-				}
+				tri[ti] += curSectionIDOffset;
 			}
-		
-			_Vertices.Append(v);
-			_VertexIDs.Append(tri);
+	
+			_Vertices.Append(v);//顶点的坐标
+			curSectionIDOffset = _Vertices.Num();
+			
+			_VertexIDs.Append(tri);//构成三角形的id序号
 			_Normals.Append(n);
 			_UVs.Append(uv);
 			_UVs2.Append(uv2);
-			_Position.Append(p);
+			_Position.Append(v);
 			_Tangents.Append(tan);
-
-			TArray<FMeshTriangle> trian;
-			for(int id = 0; id < _VertexIDs.Num(); id += 3)
-			{
-				FVector3f A =  _Position[_VertexIDs[id]];
-				FVector3f B =  _Position[_VertexIDs[id + 1]];
-				FVector3f C =  _Position[_VertexIDs[id + 2]];
-				FVector3f NormalA = FVector3f(_Normals[_VertexIDs[id]]);
-				FVector3f NormalB = FVector3f(_Normals[_VertexIDs[id + 1]]);
-				FVector3f NormalC = FVector3f(_Normals[_VertexIDs[id + 2]]);
-				FVector2f UV_A = FVector2f(_UVs2[_VertexIDs[id]]);
-				FVector2f UV_B = FVector2f(_UVs2[_VertexIDs[id + 1]]);
-				FVector2f UV_C = FVector2f(_UVs2[_VertexIDs[id + 2]]);
-				trian.Add(FMeshTriangle(A,B,C, NormalA, NormalB, NormalC, UV_A, UV_B, UV_C));
-				//trian.Add(FMeshTriangle(A,B,C, NormalA, NormalB, NormalC));
-			}
-			_Triangles.Append(trian);
-			
 		}
 	}
+
+	TArray<FMeshTriangle> trian;
+	for(int id = 0; id < _VertexIDs.Num(); id += 3)
+	{
+		FVector3f A =  _Position[_VertexIDs[id]];
+		FVector3f B =  _Position[_VertexIDs[id + 1]];
+		FVector3f C =  _Position[_VertexIDs[id + 2]];
+		FVector3f NormalA = FVector3f(_Normals[_VertexIDs[id]]);
+		FVector3f NormalB = FVector3f(_Normals[_VertexIDs[id + 1]]);
+		FVector3f NormalC = FVector3f(_Normals[_VertexIDs[id + 2]]);
+		FVector2f UV_A = FVector2f(_UVs2[_VertexIDs[id]]);
+		FVector2f UV_B = FVector2f(_UVs2[_VertexIDs[id + 1]]);
+		FVector2f UV_C = FVector2f(_UVs2[_VertexIDs[id + 2]]);
+		trian.Add(FMeshTriangle(A,B,C, NormalA, NormalB, NormalC, UV_A, UV_B, UV_C));
+	}
+	_Triangles.Append(trian);
 }
 
 void UBVHData::GetSceneData()
@@ -125,14 +127,20 @@ void UBVHData::GetSceneData()
 	//UE_LOG(LogTemp, Warning, TEXT("posNum: %d"), VerticePositions.Num());
 	//UE_LOG(LogTemp, Warning, TEXT("triNum: %d"), TriangleVertexIDs.Num());
 	
-	//for (int32 i = 0; i < VerticeIDs.Num(); i++)
-		//UE_LOG(LogTemp, Warning, TEXT("uv1: (%f, %f) : uv2: (%f, %f)"), UVs[i].X, UVs[i].Y, UVs2[i].X, UVs2[i].Y);
-
+	// for (int32 i = 0; i < VerticeIDs.Num(); i++)
+	// 	UE_LOG(LogTemp, Warning, TEXT("vid: %s"), *(VerticeIDs[i].ToString()));
+	// UE_LOG(LogTemp, Warning, TEXT("======================================================"));
+	
 	// for (int32 i = 0; i < TriangleVertexIDs.Num(); i++)
 	// 	UE_LOG(LogTemp, Warning, TEXT("triID: %d   pos: %s"), TriangleVertexIDs[i], *(VerticePositions[TriangleVertexIDs[i]].ToString()));
+	// UE_LOG(LogTemp, Warning, TEXT("======================================================"));
 	//
 	// for (int32 i = 0; i < Triangles.Num(); i++)
 	// 	UE_LOG(LogTemp, Warning, TEXT("trianPos: %s,  %s,  %s"), *(Triangles[i].A.ToString()), *(Triangles[i].B.ToString()), *(Triangles[i].C.ToString()));
+
+	// for (int32 i = 0; i < VerticePositions.Num(); i++)
+	// 	UE_LOG(LogTemp, Warning, TEXT("pos: %s"), *(VerticePositions[i].ToString()));
+	// UE_LOG(LogTemp, Warning, TEXT("======================================================"));
 }
 
 void UBVHData::ClearSceneData()
@@ -144,5 +152,80 @@ void UBVHData::ClearSceneData()
 	UVs.Empty();
 	UVs2.Empty();
 	Tangents.Empty();
+}
+
+void UBVHData::GetSectionFromStaticMesh(UStaticMesh* InMesh, int32 LODIndex, int32 SectionIndex,
+	TArray<FVector>& _Vertices, TArray<int32>& _Triangles, TArray<FVector>& _Normals, TArray<FVector2D>& _UVs,
+	TArray<FProcMeshTangent>& _Tangents)
+{
+	if(	InMesh != nullptr )
+	{
+		if (InMesh->GetRenderData() != nullptr && InMesh->GetRenderData()->LODResources.IsValidIndex(LODIndex))
+		{
+			const FStaticMeshLODResources& LOD = InMesh->GetRenderData()->LODResources[LODIndex];
+			if (LOD.Sections.IsValidIndex(SectionIndex))
+			{
+				// Empty output buffers
+				_Vertices.Reset();
+				_Triangles.Reset();
+				_Normals.Reset();
+				_UVs.Reset();
+				_Tangents.Reset();
+
+				// Map from vert buffer for whole mesh to vert buffer for section of interest
+				TMap<int32, int32> MeshToSectionVertMap;
+
+				const FStaticMeshSection& Section = LOD.Sections[SectionIndex];
+				const uint32 OnePastLastIndex = Section.FirstIndex + Section.NumTriangles * 3;
+				FIndexArrayView Indices = LOD.IndexBuffer.GetArrayView();
+
+				// Iterate over section index buffer, copying verts as needed
+				for (uint32 i = Section.FirstIndex; i < OnePastLastIndex; i++)
+				{
+					uint32 MeshVertIndex = Indices[i];
+
+					// See if we have this vert already in our section vert buffer, and copy vert in if not 
+					int32 SectionVertIndex = GetNewIndexForOldVertIndex(MeshVertIndex, MeshToSectionVertMap, LOD.VertexBuffers, _Vertices, _Normals, _UVs, _Tangents);
+
+					// Add to index buffer
+					_Triangles.Add(SectionVertIndex);
+				}
+			}
+		}
+	}
+}
+
+int32 UBVHData::GetNewIndexForOldVertIndex(int32 MeshVertIndex, TMap<int32, int32>& MeshToSectionVertMap,
+	const FStaticMeshVertexBuffers& VertexBuffers, TArray<FVector>& _Vertices, TArray<FVector>& _Normals,
+	TArray<FVector2D>& _UVs, TArray<FProcMeshTangent>& _Tangents)
+{
+	int32* NewIndexPtr = MeshToSectionVertMap.Find(MeshVertIndex);
+	if (NewIndexPtr != nullptr)
+	{
+		return *NewIndexPtr;
+	}
+	else
+	{
+		// Copy position
+		int32 SectionVertIndex = _Vertices.Add((FVector)VertexBuffers.PositionVertexBuffer.VertexPosition(MeshVertIndex));
+
+		// Copy normal
+		_Normals.Add(FVector4(VertexBuffers.StaticMeshVertexBuffer.VertexTangentZ(MeshVertIndex)));
+		check(_Normals.Num() == _Vertices.Num());
+
+		// Copy UVs
+		_UVs.Add(FVector2D(VertexBuffers.StaticMeshVertexBuffer.GetVertexUV(MeshVertIndex, 1)));
+		check(_UVs.Num() == _Vertices.Num());
+
+		// Copy tangents
+		FVector4 TangentX = (FVector4)VertexBuffers.StaticMeshVertexBuffer.VertexTangentX(MeshVertIndex);
+		FProcMeshTangent NewTangent(TangentX, TangentX.W < 0.f);
+		_Tangents.Add(NewTangent);
+		check(_Tangents.Num() == _Vertices.Num());
+
+		MeshToSectionVertMap.Add(MeshVertIndex, SectionVertIndex);
+
+		return SectionVertIndex;
+	}
 }
 

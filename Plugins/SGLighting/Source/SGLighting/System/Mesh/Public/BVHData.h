@@ -87,7 +87,13 @@ public:
 		TArray<FMeshTriangle>& _Triangles);
 	void GetSceneData();
 	void ClearSceneData();
-	
+
+	void GetSectionFromStaticMesh(UStaticMesh* InMesh, int32 LODIndex, int32 SectionIndex,
+	TArray<FVector>& _Vertices, TArray<int32>& _Triangles, TArray<FVector>& _Normals, TArray<FVector2D>& _UVs,
+	TArray<FProcMeshTangent>& _Tangents);
+	int32 GetNewIndexForOldVertIndex(int32 MeshVertIndex, TMap<int32, int32>& MeshToSectionVertMap,
+	const FStaticMeshVertexBuffers& VertexBuffers, TArray<FVector>& _Vertices, TArray<FVector>& _Normals,
+	TArray<FVector2D>& _UVs, TArray<FProcMeshTangent>& _Tangents);
 private:
 	UMeshCollecter* MeshCollecter;
 

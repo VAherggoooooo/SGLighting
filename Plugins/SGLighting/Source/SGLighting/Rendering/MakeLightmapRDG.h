@@ -105,8 +105,10 @@ public:
 			Vertices[i].Normal = FVector4f(BVHData->Normals[i].X, BVHData->Normals[i].Y, BVHData->Normals[i].Z, 0.0f);
 			Vertices[i].Tangent = FVector4f(BVHData->Tangents[i].TangentX.X, BVHData->Tangents[i].TangentX.Y, BVHData->Tangents[i].TangentX.Z, 0.0f);
 			//Vertices[i].Position_OS = FVector4f(1,1,1,1);
-			//UE_LOG(LogTemp, Warning, TEXT("vpos: (%f, %f ): vuv: (%f, %f)"), VerticeIDs[i].Position.X, VerticeIDs[i].Position.Y, VerticeIDs[i].UV.X, VerticeIDs[i].UV.Y);
+			//UE_LOG(LogTemp, Warning, TEXT("pos: %s"), *(Vertices[i].Position_OS.ToString()));
 		}
+
+		//UE_LOG(LogTemp, Warning, TEXT("posNum: %d"), VertexNum);
 		//UE_LOG(LogTemp, Warning, TEXT("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"));
 
 		// Create vertex buffer. Fill buffer with initial data upon creation

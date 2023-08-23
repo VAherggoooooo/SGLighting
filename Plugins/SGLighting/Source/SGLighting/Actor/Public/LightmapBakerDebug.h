@@ -24,6 +24,12 @@ public:
 	UFUNCTION(CallInEditor)
 	void DebugSGDirs();
 
+	UFUNCTION(BlueprintCallable)
+	TArray<FVector>& DebugSceneInfo();
+
+	UPROPERTY(EditAnywhere)
+	TArray<FVector> poses;
+
 	virtual void Tick(float DeltaSeconds) override;
 	virtual void BeginPlay() override;
 };
