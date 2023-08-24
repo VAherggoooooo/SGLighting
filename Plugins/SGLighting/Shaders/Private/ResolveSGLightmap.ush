@@ -1,0 +1,182 @@
+#ifndef RESOLVE_SG_LIGHTMAP
+#define RESOLVE_SG_LIGHTMAP
+
+#define SG_NUM 12
+
+struct SG
+{
+	float3 Amplitude;
+	float3 Axis;
+	float sharpeness;
+};
+struct ASG
+{
+	float3 Amplitude;
+	float3 BasisZ;              // Direction the ASG points
+	float3 BasisX;
+	float3 BasisY;
+	float SharpnessX;           // Scale of the X axis
+	float SharpnessY;           // Scale of the Y axis
+};
+
+struct SG_Resolver
+{
+	//>>>> diffuse
+	float3 Resolve_Diffuse(
+		float3 SGs[SG_NUM],
+		float3 Normal,
+		float Sharpness)
+	{
+		float3 Dir1 = float3(0.4, 0, -0.917);
+		float3 Dir2 = float3(-0.488, 0.447, -0.75);
+		float3 Dir3 = float3(0.071, -0.809, -0.583);
+		float3 Dir4 = float3(0.553, 0.721, -0.417);
+		float3 Dir5 = float3(-0.953, -0.169, -0.250);
+		float3 Dir6 = float3(0.841, -0.535, -0.083);
+		float3 Dir7 = float3(-0.259, 0.962, 0.083);
+		float3 Dir8 = float3(-0.446, -0.859, 0.25);
+		float3 Dir9 = float3(0.854, 0.312, 0.417);
+		float3 Dir10 = float3(-0.751, 0.31, 0.583);
+		float3 Dir11 = float3(0.28, -0.599, 0.75);
+		float3 Dir12 = float3(0.12, 0.381, 0.917);
+		float3 dirs[SG_NUM] = {Dir1, Dir2, Dir3, Dir4, Dir5, Dir6, Dir7, Dir8, Dir9, Dir10, Dir11, Dir12};
+
+		float3 finalCol = 0;
+		for(int i = 0; i < SG_NUM; i++)
+		{
+			float ndotd = saturate(dot(Normal, dirs[i]));
+			finalCol += ndotd * 2.0 * 3.1415926 * max(0.0, SGs[i]) / Sharpness;
+		}
+		return finalCol;
+	}
+
+ 
+	//>>>>>> specular
+	float GGX_V1(float m2, float nDotX)
+    {
+        return 1.0f / (nDotX + sqrt(m2 + (1 - m2) * nDotX * nDotX));
+    }
+ 
+    float3 EvaluateASG(ASG asg, float3 dir)
+    {
+        float smoothTerm = saturate(dot(asg.BasisZ, dir));
+        float lambdaTerm = asg.SharpnessX * dot(dir, asg.BasisX) * dot(dir, asg.BasisX);
+        float muTerm = asg.SharpnessY * dot(dir, asg.BasisY) * dot(dir, asg.BasisY);
+        return asg.Amplitude * smoothTerm * exp(-lambdaTerm - muTerm);
+    }
+ 
+    float3 ConvolveASG_SG(ASG asg, SG sg) 
+    {
+        float nu = sg.sharpeness * 0.5f;
+ 
+        ASG convolveASG;
+        convolveASG.BasisX = asg.BasisX;
+        convolveASG.BasisY = asg.BasisY;
+        convolveASG.BasisZ = asg.BasisZ;
+ 
+        convolveASG.SharpnessX = (nu * asg.SharpnessX) / (nu + asg.SharpnessX);
+        convolveASG.SharpnessY = (nu * asg.SharpnessY) / (nu + asg.SharpnessY);
+ 
+        convolveASG.Amplitude = 3.1415926 / sqrt((nu + asg.SharpnessX) * (nu + asg.SharpnessY));
+ 
+        return EvaluateASG(convolveASG, sg.Axis) * sg.Amplitude * asg.Amplitude;
+    }
+ 
+ 
+    float3 SpecularTermSG(SG sglight, float3 n, float r, float3 view)
+    {
+        SG ndf;
+        ndf.Axis = n;
+        float m2 = r * r;
+        ndf.sharpeness = 2 / max(m2, 0.001);
+        ndf.Amplitude = 1.0 / (3.14115926 * m2);// * 3.1415926;
+ 
+        ASG warpedNDF;
+        warpedNDF.BasisZ = reflect(-view, ndf.Axis);
+        warpedNDF.BasisX = normalize(cross(ndf.Axis, warpedNDF.BasisZ));
+        warpedNDF.BasisY = normalize(cross(warpedNDF.BasisZ, warpedNDF.BasisX));
+        float dotdiro = max(dot(view, ndf.Axis), 0.1f);
+        warpedNDF.SharpnessX = ndf.sharpeness / (8.0f * dotdiro * dotdiro);
+        warpedNDF.SharpnessY = ndf.sharpeness / 8.0f;
+        warpedNDF.Amplitude = ndf.Amplitude;
+ 
+        float3 output = ConvolveASG_SG(warpedNDF, sglight);
+ 
+        float nDotL = saturate(dot(n, warpedNDF.BasisZ));
+        float nDotV = saturate(dot(n, view));
+        float3 h = normalize(warpedNDF.BasisZ + view);
+ 
+        output *= GGX_V1(m2, nDotL) * GGX_V1(m2, nDotV);
+ 
+        float3 specAlbedo = 1;
+        output *= specAlbedo + (1.0f - specAlbedo) * pow((1.0f - saturate(dot(warpedNDF.BasisZ, h))), 5.0f);
+ 
+        output *= saturate(dot(specAlbedo, 333.0f));
+        output *= nDotL;
+ 
+        return max(output, float3(0.0, 0.0, 0.0));
+    }
+
+	float3 Resolve_Specular(float3 SGs[SG_NUM], float3 Normal, float3 v, float Roughness, float Sharpness)
+	{
+		float3 Dir1 = float3(0.4, 0, -0.917);
+		float3 Dir2 = float3(-0.488, 0.447, -0.75);
+		float3 Dir3 = float3(0.071, -0.809, -0.583);
+		float3 Dir4 = float3(0.553, 0.721, -0.417);
+		float3 Dir5 = float3(-0.953, -0.169, -0.250);
+		float3 Dir6 = float3(0.841, -0.535, -0.083);
+		float3 Dir7 = float3(-0.259, 0.962, 0.083);
+		float3 Dir8 = float3(-0.446, -0.859, 0.25);
+		float3 Dir9 = float3(0.854, 0.312, 0.417);
+		float3 Dir10 = float3(-0.751, 0.31, 0.583);
+		float3 Dir11 = float3(0.28, -0.599, 0.75);
+		float3 Dir12 = float3(0.12, 0.381, 0.917);
+		float3 dirs[SG_NUM] = {Dir1, Dir2, Dir3, Dir4, Dir5, Dir6, Dir7, Dir8, Dir9, Dir10, Dir11, Dir12};
+		
+		float3 specular = 0;
+		for(int i = 0; i < SG_NUM; i++)
+		{
+			SG light;
+			light.Amplitude = SGs[i];
+			light.Axis = dirs[i];
+			light.sharpeness = Sharpness;
+			specular += SpecularTermSG(light, Normal, Roughness, v);
+		}
+		return specular;
+	}
+};
+
+// #include "/Plugins/SGLighting/Private/ResolveSGLightmap.ush"
+// SG_Resolver resolver;
+// float3 sgcol1 = Texture2DSample(SG1, SG1Sampler, UV).xyz;
+// float3 sgcol2 = Texture2DSample(SG2, SG1Sampler, UV).xyz;
+// float3 sgcol3 = Texture2DSample(SG3, SG1Sampler, UV).xyz;
+// float3 sgcol4 = Texture2DSample(SG4, SG1Sampler, UV).xyz;
+// float3 sgcol5 = Texture2DSample(SG5, SG1Sampler, UV).xyz;
+// float3 sgcol6 = Texture2DSample(SG6, SG1Sampler, UV).xyz;
+// float3 sgcol7 = Texture2DSample(SG7, SG1Sampler, UV).xyz;
+// float3 sgcol8 = Texture2DSample(SG8, SG1Sampler, UV).xyz;
+// float3 sgcol9 = Texture2DSample(SG9, SG1Sampler, UV).xyz;
+// float3 sgcol10 = Texture2DSample(SG10, SG1Sampler, UV).xyz;
+// float3 sgcol11 = Texture2DSample(SG11, SG1Sampler, UV).xyz;
+// float3 sgcol12 = Texture2DSample(SG12, SG1Sampler, UV).xyz;
+//
+// float3 SGs[12] = {sgcol1, sgcol2, sgcol3, sgcol4, sgcol5, sgcol6, sgcol7, sgcol8, sgcol9, sgcol10, sgcol11, sgcol12};
+//
+// float3 diffuse = resolver.Resolve_Diffuse(SGs, Normal, Sharpness);
+// float3 specular = resolver.Resolve_Specular(SGs, Normal, v, Roughness, Sharpness);
+// float3 finalColor = diffuse * DiffuseIntensity + specular * SpecularIntensity;
+// return finalColor;
+
+
+//ue shader node:
+// SampleSGLightmap(
+// Texture2D SG1, Texture2D SG2, Texture2D SG3,
+// Texture2D SG4, Texture2D SG5, Texture2D SG6,
+// Texture2D SG7, Texture2D SG8, Texture2D SG9,
+// Texture2D SG10, Texture2D SG11, Texture2D SG12,
+// float3 Normal, float Sharpness, float2 UV, float3 v, float Roughness,
+// float DiffuseIntensity, float SpecularIntensity)
+
+
+#endif

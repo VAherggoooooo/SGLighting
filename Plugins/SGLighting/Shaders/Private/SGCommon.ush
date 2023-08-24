@@ -179,7 +179,7 @@ float3 PathTracingShading(Ray _ray, int _depth, FMainLight _Light)
 			//rayColour *= sunLight * PI;
 			
 			
-			rayColour *= saturate(dot(info.normal, newDir)) * info.color * 1.2; /// max(1, min(MaxFallOff, (info.hitTime * info.hitTime)));
+			rayColour *= saturate(dot(info.normal, newDir)) * info.color * 1.05; /// max(1, min(MaxFallOff, (info.hitTime * info.hitTime)));
 			//rayColour /= PI;
 			if(max(rayColour.x, max(rayColour.y, rayColour.z)) < 0.02)
 			{
