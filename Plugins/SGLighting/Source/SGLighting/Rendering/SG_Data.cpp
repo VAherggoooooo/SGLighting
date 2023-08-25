@@ -47,20 +47,5 @@ void GenerateUniformSGs(int numSGs, TArray<FSG_Full>& outSGs)
 
     for(int i = 0; i < numSGs; ++i)
         outSGs[i].BasisSqIntegralOverDomain = 0.0f;
-
     
-    //const uint64 sampleCount = 2048;
-    //FVector2f samples[sampleCount];
-    // //计算BasisSqIntegralOverDomain
-    // for(uint64 i = 0; i < sampleCount; ++i)
-    // {
-    //     //SampleDirectionSphere(samples[i].x, samples[i].y)
-    //     Float3 dir = distribution == SGDistribution::Hemispherical ? SampleDirectionHemisphere(samples[i].x, samples[i].y)
-    //                                                                : SampleDirectionSphere(samples[i].x, samples[i].y);
-    //     for(uint32 j = 0; j < numSGs; ++j)
-    //     {
-    //         float weight = std::exp(outSGs[j].Sharpness * (Float3::Dot(dir, outSGs[j].Axis) - 1.0f));
-    //         outSGs[j].BasisSqIntegralOverDomain += (weight * weight - outSGs[j].BasisSqIntegralOverDomain) / float(i + 1);
-    //     }
-    // }
 }

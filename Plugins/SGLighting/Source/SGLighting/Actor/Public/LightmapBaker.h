@@ -28,6 +28,12 @@ public:
 	 */
 	UPROPERTY(EditAnywhere)
 	bool bEnableTickBake = true;
+
+	/**
+	 * 像素向外扩充
+	 */
+	UPROPERTY(EditAnywhere)
+	bool bEnableExpand = true;
 	
 	UPROPERTY(VisibleDefaultsOnly)
 	USceneComponent* Root;

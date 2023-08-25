@@ -98,8 +98,12 @@ private:
 	UMeshCollecter* MeshCollecter;
 
 public:
+
+	//实际上这两个是一个东西, 历史遗留原因保留了两个
 	TArray<FVector> VerticeIDs;
 	TArray<FVector3f>VerticePositions;
+
+	
 	TArray<int32> TriangleVertexIDs;//组成三角形的顶点ID列表
 	TArray<FVector> Normals;
 	TArray<FVector2D> UVs, UVs2;

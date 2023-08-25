@@ -448,9 +448,12 @@ void ALightmapBaker::Tick(float DeltaTime)
 					BlurTexture(SGRTs[j], SGRTs_Temp[j], SGRTs[j]);
 				}
 			}
-			for(int j = 0; j < SG_NUM; j++)
+			if(bEnableExpand)
 			{
-				ExpandTexture(SGRTs[j], SGRTs_Temp[j], SGRTs[j]);
+				for(int j = 0; j < SG_NUM; j++)
+				{
+					ExpandTexture(SGRTs[j], SGRTs_Temp[j], SGRTs[j]);
+				}
 			}
 			UKismetSystemLibrary::PrintString(this, FString("Bake Over"));
 		}

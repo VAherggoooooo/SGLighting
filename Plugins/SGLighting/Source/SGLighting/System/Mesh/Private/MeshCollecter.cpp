@@ -71,7 +71,7 @@ TArray<UStaticMeshComponent*> UMeshCollecter::GetAllStaticMeshComponents(bool bP
 	for (AActor* act : allActors)
 	{
 		UStaticMeshComponent* smComp = act->GetComponentByClass<UStaticMeshComponent>();
-		if(smComp != nullptr && smComp->Mobility == EComponentMobility::Static)//TODO: 判断是否需要静态
+		if(smComp != nullptr && smComp->Mobility == EComponentMobility::Static)//判断是否需要静态
 			smComponents.Add(smComp);
 	}
 

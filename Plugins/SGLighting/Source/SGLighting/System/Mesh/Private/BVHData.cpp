@@ -72,7 +72,8 @@ void UBVHData::GetAllMeshInfo(TArray<FVector>& _Vertices, TArray<FVector3f>& _Po
 	for (UStaticMesh* mesh : staticMeshes)
 	{
 		int curSectionIDOffset = 0;
-		for(int sectionID = 0; sectionID < mesh->GetNumSections(mesh->GetMinLODIdx()); sectionID++)//mesh->GetNumSections(mesh->GetMinLODIdx())
+		//section: 一个mesh的多块, 即使一个mesh只有一整个结构, 但材质不同也会被拆成不同section
+		for(int sectionID = 0; sectionID < mesh->GetNumSections(mesh->GetMinLODIdx()); sectionID++)
 		{
 			TArray<FVector> v;
 			TArray<FVector3f> p;
@@ -86,7 +87,7 @@ void UBVHData::GetAllMeshInfo(TArray<FVector>& _Vertices, TArray<FVector3f>& _Po
 			
 			for(int ti = 0; ti < tri.Num(); ti++)
 			{
-				tri[ti] += curSectionIDOffset;
+				tri[ti] += curSectionIDOffset;//因为每个section的id起点会被重置为0, 所以需要加上之前所有section的顶点数量
 			}
 	
 			_Vertices.Append(v);//顶点的坐标
@@ -153,6 +154,9 @@ void UBVHData::ClearSceneData()
 	UVs2.Empty();
 	Tangents.Empty();
 }
+
+
+//>>>>>>>>>>>>>>>>>>>>>>>>> 以下两个函数是超源码的
 
 void UBVHData::GetSectionFromStaticMesh(UStaticMesh* InMesh, int32 LODIndex, int32 SectionIndex,
 	TArray<FVector>& _Vertices, TArray<int32>& _Triangles, TArray<FVector>& _Normals, TArray<FVector2D>& _UVs,

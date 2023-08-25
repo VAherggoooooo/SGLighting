@@ -3,6 +3,8 @@
 
 #define SG_NUM 12
 
+// 用到ue material蓝图的 
+
 struct SG
 {
 	float3 Amplitude;
