@@ -104,3 +104,20 @@ float DotProduct(FVector3f _v1, FVector3f _v2)
 
 
 void GenerateUniformSGs(int numSGs, TArray<FSG_Full>& outSGs);
+
+
+
+/**
+ * @brief SG核数量, 拉满12, 可以是5, 9
+ */
+#define SG_NUM 12
+
+
+struct FTextureVertex
+{
+	FVector4f Position;
+	FVector2f UV;
+	FVector4f Position_OS;
+	FVector4f Normal;
+	FVector4f Tangent;
+};

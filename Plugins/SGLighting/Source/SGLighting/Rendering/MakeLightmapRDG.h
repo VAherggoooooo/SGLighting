@@ -8,6 +8,7 @@
 #include "Math/TransformCalculus3D.h"
 #include "SGLighting/System/Mesh/Public/BVHData.h"
 #include "ProceduralMeshComponent.h"
+#include "SG_Data.h"
 #include "Engine/DirectionalLight.h"
 #include "MakeLightmapRDG.generated.h"
 
@@ -23,18 +24,11 @@ enum OutRTType
 	TangentWS,
 };
 
-//blurprint node 函数作为起点
 UCLASS(MinimalAPI, meta = (ScriptName = "SimpleRenderingExample"))
 class UMakeLightmapBlueprintLibrary : public UBlueprintFunctionLibrary
 {
 	GENERATED_BODY()
 
-public:	
-	UFUNCTION(BlueprintCallable, Category = "SG Lightmap", meta = (WorldContext = "WorldContextObject"))
-	static void UseRDGComput(const UObject* WorldContextObject, UTextureRenderTarget2D* OutputRenderTarget);
-
-	UFUNCTION(BlueprintCallable, Category = "SG Lightmap", meta = (WorldContext = "WorldContextObject"))
-	static void UseRDGDraw(const UObject* WorldContextObject, UTextureRenderTarget2D* Output_Position_RT, UTextureRenderTarget2D* Output_Normal_RT, UTextureRenderTarget2D* Output_Tangent_RT);
 };
 
 
@@ -45,7 +39,6 @@ class ULightmapCollect : public UObject
 
 public:
 	void Init(UBVHData* _bvhData);
-	void UseRDGDraw(const UObject* WorldContextObject, UTextureRenderTarget2D* OutputRenderTarget, UTexture2D* InTexture, int32 Size);
 	UBVHData* GetBVHData() const { return BVHData == nullptr? nullptr:BVHData; }
 private:
 	UBVHData* BVHData;
@@ -53,29 +46,15 @@ private:
 
 
 
-
-struct FTextureVertex
-{
-	FVector4f Position;
-	FVector2f UV;
-	FVector4f Position_OS;
-	FVector4f Normal;
-	FVector4f Tangent;
-};
-
-
 /**
  * @brief 顶点buffer, 设置的不同序号顶点的position, uv
  */
 class FRectangleVertexBuffer : public FVertexBuffer
 {
-// private:
-// 	UBVHData* BVHData;
 public:
 	int32 VertexNum = 0;
 	TArray<FMeshTriangle> SceneMeshTriangles;
-	
-	/** Initialize the RHI for this rendering resource */
+
 	void InitRHI() override
 	{
 		UBVHData* BVHData = NewObject<UBVHData>();
@@ -94,9 +73,6 @@ public:
 		Vertices.SetNumUninitialized(VertexNum);
 		SceneMeshTriangles = BVHData->Triangles;
 		
-		
-		
-		//UE_LOG(LogTemp, Warning, TEXT("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"));
 		for (int32 i = 0; i < BVHData->VerticeIDs.Num(); i++)
 		{
 			Vertices[i].Position = FVector4f((BVHData->UVs2[i].X * 2.0f) - 1.0f, ((1 - BVHData->UVs2[i].Y) * 2.0f) - 1.0f, 0, 1);//右下角
@@ -104,14 +80,7 @@ public:
 			Vertices[i].Position_OS = FVector4f(BVHData->VerticePositions[i].X, BVHData->VerticePositions[i].Y, BVHData->VerticePositions[i].Z, 1.0f);
 			Vertices[i].Normal = FVector4f(BVHData->Normals[i].X, BVHData->Normals[i].Y, BVHData->Normals[i].Z, 0.0f);
 			Vertices[i].Tangent = FVector4f(BVHData->Tangents[i].TangentX.X, BVHData->Tangents[i].TangentX.Y, BVHData->Tangents[i].TangentX.Z, 0.0f);
-			//Vertices[i].Position_OS = FVector4f(1,1,1,1);
-			//UE_LOG(LogTemp, Warning, TEXT("pos: %s"), *(Vertices[i].Position_OS.ToString()));
 		}
-
-		//UE_LOG(LogTemp, Warning, TEXT("posNum: %d"), VertexNum);
-		//UE_LOG(LogTemp, Warning, TEXT("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"));
-
-		// Create vertex buffer. Fill buffer with initial data upon creation
 		FRHIResourceCreateInfo CreateInfo(TEXT("FRectangleVertexBuffer"),&Vertices);
 		VertexBufferRHI = RHICreateVertexBuffer(Vertices.GetResourceDataSize(), BUF_Static, CreateInfo);
 	}
@@ -159,7 +128,6 @@ public:
 
 	int32 PrimitiveNum = 0;
 	
-	/** Initialize the RHI for this rendering resource */
 	void InitRHI() override
 	{
 		UBVHData* BVHData = NewObject<UBVHData>();
@@ -178,19 +146,12 @@ public:
 		uint16* Indices = new uint16[idNum];
 		PrimitiveNum = idNum / 3;
 
-		//UE_LOG(LogTemp, Warning, TEXT("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"));
 		for(int i = 0; i < idNum; i++)
 		{
 			uint16 u16ID = (uint16)(BVHData->TriangleVertexIDs[i]);
 			Indices[i] = u16ID;
-			//UE_LOG(LogTemp, Warning, TEXT("triID: %d"), Indices[i]);
 		}
-		//UE_LOG(LogTemp, Warning, TEXT("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"));
-
-		//const uint16 Indices[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 7, 6, 9, 10, 11, 12, 13, 12, 11};
-
 		TResourceArray<uint16, INDEXBUFFER_ALIGNMENT> IndexBuffer;
-		//uint32 NumIndices = UE_ARRAY_COUNT(Indices);
 		uint32 NumIndices = idNum;
 		IndexBuffer.AddUninitialized(NumIndices);
 		FMemory::Memcpy(IndexBuffer.GetData(), Indices, NumIndices * sizeof(uint16));
@@ -336,8 +297,6 @@ extern TGlobalResource<FRectangleVertexBuffer> GRectangleVertexBuffer;
 extern TGlobalResource<FRectangleIndexBuffer> GRectangleIndexBuffer;
 
 //RDG Method
-void RDGCompute(FRHICommandListImmediate &RHIImmCmdList, FTexture2DRHIRef RenderTargetRHI);
-
 void RDGDraw(FRHICommandListImmediate &RHIImmCmdList, FTexture2DRHIRef PositonRHI, FTexture2DRHIRef NormalRHI, FTexture2DRHIRef TangentRHI);
 
 void DrawToRT(FRHICommandListImmediate &RHIImmCmdList, FTexture2DRHIRef RTRHI, OutRTType Type);

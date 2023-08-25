@@ -2,15 +2,19 @@
 
 
 #include "SGLighting/Actor/Public/LightmapBaker.h"
-
+#include "SGLighting/Rendering/SG_Data.h"
+#include "Components/LightComponent.h"
 #include "Engine/TextureRenderTarget2D.h"
+#include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMaterialLibrary.h"
 #include "Kismet/KismetRenderingLibrary.h"
 #include "Kismet/KismetSystemLibrary.h"
+#include "Materials/MaterialInstanceConstant.h"
 #include "Materials/MaterialInstanceDynamic.h"
 #include "Materials/MaterialParameterCollection.h"
 #include "SGLighting/Rendering/MakeLightmapRDG.h"
 #include "SGLighting/Rendering/SGPathTracing.h"
+#include "UObject/ConstructorHelpers.h"
 
 
 TArray<FSG_Full> ALightmapBaker::OutSGs;
@@ -18,48 +22,114 @@ TArray<FSG_Full> ALightmapBaker::OutSGs;
 // Sets default values
 ALightmapBaker::ALightmapBaker()
 {
-	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
-
-
+	
 	Root = CreateDefaultSubobject<USceneComponent>(TEXT("Root"));
 	RootComponent = Root;
-
 	
 	SM_BlendMap = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("BlendMap"));
 	SM_CopyMap = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("CopyMap"));
 	SM_BlurMap = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("BlurMap"));
 	SM_ExpandMap = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("ExpandMap"));
 
+	FSoftObjectPath PlaneMesh_SoftRef("StaticMesh'/Engine/BasicShapes/Plane.Plane'");
+	SM_BlendMap->SetStaticMesh(Cast<UStaticMesh>(PlaneMesh_SoftRef.TryLoad()));
+	SM_CopyMap->SetStaticMesh(Cast<UStaticMesh>(PlaneMesh_SoftRef.TryLoad()));
+	SM_BlurMap->SetStaticMesh(Cast<UStaticMesh>(PlaneMesh_SoftRef.TryLoad()));
+	SM_ExpandMap->SetStaticMesh(Cast<UStaticMesh>(PlaneMesh_SoftRef.TryLoad()));
+
+	//为什么不用for循环? 因为我试了就是不能
+	FSoftObjectPath BlendMat_SoftRef("MaterialInstanceConstant'/SGLighting/Material/EditTexture/BlendMap_Inst.BlendMap_Inst'");
+	SM_BlendMap->SetMaterial(0, Cast<UMaterialInstanceConstant>(BlendMat_SoftRef.TryLoad()));
+	FSoftObjectPath CopyMat_SoftRef("MaterialInstanceConstant'/SGLighting/Material/EditTexture/CopyTexture_Inst.CopyTexture_Inst'");
+	SM_CopyMap->SetMaterial(0, Cast<UMaterialInstanceConstant>(CopyMat_SoftRef.TryLoad()));
+	FSoftObjectPath BlurMat_SoftRef("MaterialInstanceConstant'/SGLighting/Material/EditTexture/BlurTexture_Inst.BlurTexture_Inst'");
+	SM_BlurMap->SetMaterial(0, Cast<UMaterialInstanceConstant>(BlurMat_SoftRef.TryLoad()));
+	FSoftObjectPath ExpandMat_SoftRef("MaterialInstanceConstant'/SGLighting/Material/EditTexture/ExpandTexture_Inst.ExpandTexture_Inst'");
+	SM_ExpandMap->SetMaterial(0, Cast<UMaterialInstanceConstant>(ExpandMat_SoftRef.TryLoad()));
+
+	
+	SM_BlendMap->SetVisibility(false);
+	SM_CopyMap->SetVisibility(false);
+	SM_BlurMap->SetVisibility(false);
+	SM_ExpandMap->SetVisibility(false);
+	
 	SM_BlendMap->SetupAttachment(Root);
 	SM_CopyMap->SetupAttachment(Root);
 	SM_BlurMap->SetupAttachment(Root);
 	SM_ExpandMap->SetupAttachment(Root);
+
+	
+	//为什么不用for循环? 因为我试了就是不能
+	FSoftObjectPath PositinRT_SoftRef("TextureRenderTarget2D'/SGLighting/Textures/DataRTs/PositionRT.PositionRT'");
+	Position_RT = Cast<UTextureRenderTarget2D>(PositinRT_SoftRef.TryLoad());
+
+	FSoftObjectPath NormalRT_SoftRef("TextureRenderTarget2D'/SGLighting/Textures/DataRTs/NormalRT.NormalRT'");
+	Normal_RT = Cast<UTextureRenderTarget2D>(NormalRT_SoftRef.TryLoad());
+
+	FSoftObjectPath TangentRT_SoftRef("TextureRenderTarget2D'/SGLighting/Textures/DataRTs/TangentRT.TangentRT'");
+	Tangent_RT = Cast<UTextureRenderTarget2D>(TangentRT_SoftRef.TryLoad());
+
+	FSoftObjectPath PT1RT_SoftRef("TextureRenderTarget2D'/SGLighting/Textures/PT_RT/PR_RT1.PR_RT1'");
+	PT_RT1 = Cast<UTextureRenderTarget2D>(PT1RT_SoftRef.TryLoad());
+	
+	FSoftObjectPath PT2RT_SoftRef("TextureRenderTarget2D'/SGLighting/Textures/PT_RT/PT_RT2.PT_RT2'");
+	PT_RT2 = Cast<UTextureRenderTarget2D>(PT2RT_SoftRef.TryLoad());
+	
+	FSoftObjectPath PT3RT_SoftRef("TextureRenderTarget2D'/SGLighting/Textures/PT_RT/PT_RT3.PT_RT3'");
+	PT_RT3= Cast<UTextureRenderTarget2D>(PT3RT_SoftRef.TryLoad());
+
+
+	
+	SGRTs.SetNum(SG_NUM);
+	SGRTs_Cur.SetNum(SG_NUM);
+	SGRTs_Temp.SetNum(SG_NUM);
+
+	for(int i = 0; i < SG_NUM; i++)
+	{
+		FSoftObjectPath SG_SoftRef;
+		FString _path = FString::Format(TEXT("TextureRenderTarget2D'/SGLighting/Textures/SGRTs/OutSG/SG{0}.SG{0}'"), { i+ 1 });
+		SG_SoftRef.SetPath(_path);
+		SGRTs[i]= Cast<UTextureRenderTarget2D>(SG_SoftRef.TryLoad());
+
+		_path = FString::Format(TEXT("TextureRenderTarget2D'/SGLighting/Textures/SGRTs/TempSG1/SG{0}_2.SG{0}_2'"), { i+ 1 });
+		SG_SoftRef.SetPath(_path);
+		SGRTs_Cur[i]= Cast<UTextureRenderTarget2D>(SG_SoftRef.TryLoad());
+
+		_path = FString::Format(TEXT("TextureRenderTarget2D'/SGLighting/Textures/SGRTs/TempSG2/SG{0}_2.SG{0}_2'"), { i+ 1 });
+		SG_SoftRef.SetPath(_path);
+		SGRTs_Temp[i]= Cast<UTextureRenderTarget2D>(SG_SoftRef.TryLoad());
+	}
 }
+
 
 void ALightmapBaker::OnConstruction(const FTransform& Transform)
 {
 	Super::OnConstruction(Transform);
-	
 }
 
-void ALightmapBaker::ClearMap()
-{
-	UKismetRenderingLibrary::ClearRenderTarget2D(this, RT1);
-	UKismetRenderingLibrary::ClearRenderTarget2D(this, RT2);
-	UKismetRenderingLibrary::ClearRenderTarget2D(this, RT3);
-}
-
-void ALightmapBaker::GetSamplerDirs()
-{
-	
-}
-
-void ALightmapBaker::TestBake()
+void ALightmapBaker::FastBake()
 {
 	InitSGs();
-	UMakeLightmapBlueprintLibrary::UseRDGDraw(nullptr, Position, Normal, Tangent);
-	PathTracingInLightmap(RT1, Position, Normal, Tangent, MainLight, SampleCount, Depth, Frame, RT4, SGRTs, MaxFallOff, Roughness);
+	
+	UseRDGDraw(nullptr, Position_RT, Normal_RT, Tangent_RT);
+	MainLight = GetMainLight(nullptr);
+	if(MainLight == nullptr)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("LOST MAINLIGHT!"));
+		return;
+	}
+	PathTracingInLightmap(PT_RT1, Position_RT, Normal_RT, Tangent_RT, MainLight, SampleCount, Depth, Frame, SGRTs, MaxFallOff, Roughness);
+}
+
+void ALightmapBaker::ClearBakeMap()
+{
+	for(int i = 0; i < SG_NUM; i++)
+	{
+		UKismetRenderingLibrary::ClearRenderTarget2D(this, SGRTs[i]);
+		UKismetRenderingLibrary::ClearRenderTarget2D(this, SGRTs_Cur[i]);
+		UKismetRenderingLibrary::ClearRenderTarget2D(this, SGRTs_Temp[i]);
+	}
 }
 
 void ALightmapBaker::InitSGs()
@@ -75,24 +145,44 @@ void ALightmapBaker::InitSGs()
 	GenerateUniformSGs(SG_NUM, OutSGs);
 }
 
+
+
+ADirectionalLight* ALightmapBaker::GetMainLight(ADirectionalLight* _MainLight)
+{
+	if(_MainLight == nullptr)
+	{
+		TArray<AActor*> Actors;
+		UGameplayStatics::GetAllActorsOfClass(GetWorld(), ADirectionalLight::StaticClass(), Actors);
+		if(Actors.Num() <= 0)
+		{
+			UE_LOG(LogTemp, Error, TEXT("No Main Light!"));
+		}
+		else
+		{
+			_MainLight = static_cast<ADirectionalLight*>(Actors[0]);
+		}
+	}
+	if(_MainLight == nullptr)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("NULL MAINLIGHT!"));
+	}
+
+	return _MainLight;
+}
+
 void ComputePathTracing(
 	FRHICommandListImmediate &RHIImmCmdList,
 	FTexture2DRHIRef RenderTargetRHI,
 	FTexture2DRHIRef Position_RT,
 	FTexture2DRHIRef Normal_RT,
 	FTexture2DRHIRef Tangent_RT,
-	ADirectionalLight* MainLight,
+	ADirectionalLight* _MainLight,
 	uint8 SampleCount, uint8 depth,
 	float seed,
-	FTexture2DRHIRef TestTexture,
 	TArray<FSG_Full>& SGs,
 	TArray<FTexture2DRHIRef> OutSGRTs, FTexture2DRHIRef InAlbedoTex, float MaxFallOff, float _Roughness)
 {
 	check(IsInRenderingThread());
-
-	//TArray<FSG_Full> SGs;
-	//GenerateUniformSGs(12, SGs);//init and get sg lobe
-	//UE_LOG(LogTemp, Warning, TEXT("RT: %s"), *(OutSGRTs[0]->GetName()));
 	
 	FRDGBuilder GraphBuilder(RHIImmCmdList);
 
@@ -101,21 +191,14 @@ void ComputePathTracing(
 	TRefCountPtr<IPooledRenderTarget> PooledRenderTarget;
 	TRefCountPtr<IPooledRenderTarget> PooledRenderTarget_Test;
 	
-	int dirNum = RenderTargetRHI->GetSizeXY().X * RenderTargetRHI->GetSizeXY().Y * SampleCount;
 	//RDG Begin
 	FSGComputeShader_PT::FParameters *Parameters = GraphBuilder.AllocParameters<FSGComputeShader_PT::FParameters>();
 	
 	const FRDGTextureDesc& RenderTargetDesc = FRDGTextureDesc::Create2D(RenderTargetRHI->GetSizeXY(),RenderTargetRHI->GetFormat(), FClearValueBinding::Black, TexCreate_RenderTargetable | TexCreate_ShaderResource | TexCreate_UAV);
 	FRDGTextureRef RDGRenderTarget = GraphBuilder.CreateTexture(RenderTargetDesc, TEXT("RDGRenderTarget"));
 	Parameters->OutTexture = GraphBuilder.CreateUAV(FRDGTextureUAVDesc(RDGRenderTarget));
-
-	const FRDGTextureDesc& RenderTargetDesc_Test = FRDGTextureDesc::Create2D(TestTexture->GetSizeXY(),TestTexture->GetFormat(), FClearValueBinding::Black, TexCreate_RenderTargetable | TexCreate_ShaderResource | TexCreate_UAV);
-	FRDGTextureRef RDGRenderTarget_Test = GraphBuilder.CreateTexture(RenderTargetDesc_Test, TEXT("RDGRenderTargetTEST"));
-	Parameters->TestTexture = GraphBuilder.CreateUAV(FRDGTextureUAVDesc(RDGRenderTarget_Test));
-
-	//TODO: 把SG RT传入shader
-	//
-	//
+	
+	//把SG RT传入shader
 	TArray<FRDGTextureDesc> SGDesc;
 	TArray<FRDGTextureRef> SGRefs;
 	TArray<TRefCountPtr<IPooledRenderTarget>> PooledSG;
@@ -124,7 +207,7 @@ void ComputePathTracing(
 	PooledSG.SetNum(SG_NUM);
 	for(int i = 0; i < SG_NUM; i++)
 	{
-		SGDesc[i] = (FRDGTextureDesc::Create2D(TestTexture->GetSizeXY(),TestTexture->GetFormat(), FClearValueBinding::Black, TexCreate_RenderTargetable | TexCreate_ShaderResource | TexCreate_UAV));
+		SGDesc[i] = (FRDGTextureDesc::Create2D(Position_RT->GetSizeXY(),Position_RT->GetFormat(), FClearValueBinding::Black, TexCreate_RenderTargetable | TexCreate_ShaderResource | TexCreate_UAV));
 		SGRefs[i] = GraphBuilder.CreateTexture((SGDesc[i]), TEXT("SGRT"));
 		FRDGTextureUAVRef tref = GraphBuilder.CreateUAV(FRDGTextureUAVDesc(SGRefs[i]));
  
@@ -187,9 +270,14 @@ void ComputePathTracing(
 	Parameters->depth = depth;
 	Parameters->seed = seed;
 	Parameters->Roughness = _Roughness;
-	
+
+	if(_MainLight == nullptr)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("NULL MAINLIGHT!"));
+		return;
+	}
 	TArray<FMainLight> MainLights;
-	FMainLight _L = FMainLight(FVector3f(MainLight->GetActorRotation().Vector()),FVector3f(MainLight->GetLightColor()), MainLight->GetLightComponent()->Intensity);
+	FMainLight _L = FMainLight(FVector3f(_MainLight->GetActorRotation().Vector()),FVector3f(_MainLight->GetLightColor()), _MainLight->GetLightComponent()->Intensity);
 	MainLights.Add(_L);
 	FRDGBufferRef MainLightBuff = CreateStructuredBuffer(GraphBuilder, TEXT("MainLightDataBuffer"), MainLights,ERDGInitialDataFlags::NoCopy);//GRectangleVertexBuffer.MeshTriangles
 	Parameters->MainLightBuffer = GraphBuilder.CreateSRV(MainLightBuff);
@@ -200,10 +288,6 @@ void ComputePathTracing(
 		FSGs.Add(FSG(sgf.Axis, sgf.Amplitude, sgf.Sharpness, sgf.BasisSqIntegralOverDomain));
 		
 	}
-	// for(int i = 0; i < SG_NUM; i++)
-	// {
-	// 	UE_LOG(LogTemp, Warning, TEXT("DIR: %s"), *(FSGs[i].Axis.ToString()));
-	// }
 	FRDGBufferRef sgbuf = CreateStructuredBuffer(GraphBuilder, TEXT("SGBuffer"), FSGs,ERDGInitialDataFlags::NoCopy);//GRectangleVertexBuffer.MeshTriangles
 	Parameters->SGBuffer = GraphBuilder.CreateSRV(sgbuf);
 	
@@ -227,7 +311,6 @@ void ComputePathTracing(
 		});
 	
 	GraphBuilder.QueueTextureExtraction(RDGRenderTarget, &PooledRenderTarget);
-	GraphBuilder.QueueTextureExtraction(RDGRenderTarget_Test, &PooledRenderTarget_Test);
 	for(int i = 0; i < SG_NUM; i++)
 	{
 		GraphBuilder.QueueTextureExtraction(SGRefs[i] , &(PooledSG[i]));
@@ -236,7 +319,6 @@ void ComputePathTracing(
 	
 	//Copy Result To RenderTarget Asset
 	RHIImmCmdList.CopyTexture(PooledRenderTarget->GetRenderTargetItem().ShaderResourceTexture, RenderTargetRHI->GetTexture2D(), FRHICopyTextureInfo());
-	RHIImmCmdList.CopyTexture(PooledRenderTarget_Test->GetRenderTargetItem().ShaderResourceTexture, TestTexture->GetTexture2D(), FRHICopyTextureInfo());
 
 	for(int i = 0; i < SG_NUM; i++)
 	{
@@ -247,9 +329,9 @@ void ComputePathTracing(
 
 
 void ALightmapBaker::PathTracingInLightmap(UTextureRenderTarget2D* OutputRT,
-                                           UTextureRenderTarget2D* Position_RT, UTextureRenderTarget2D* Normal_RT, UTextureRenderTarget2D* Tangent_RT,
+                                           UTextureRenderTarget2D* _Position_RT, UTextureRenderTarget2D* _Normal_RT, UTextureRenderTarget2D* _Tangent_RT,
                                            ADirectionalLight* mainLight, uint8 sampleCount, uint8 depth,
-                                           float seed, UTextureRenderTarget2D* TestTexture,
+                                           float seed, 
                                            TArray<UTextureRenderTarget2D* >& OutSGRTs, float _MaxFallOff, float _Roughness)
 {
 	check(IsInGameThread());
@@ -260,13 +342,12 @@ void ALightmapBaker::PathTracingInLightmap(UTextureRenderTarget2D* OutputRT,
 	}
 
 	FTexture2DRHIRef RenderTargetRHI = OutputRT->GameThread_GetRenderTargetResource()->GetRenderTargetTexture();
-	FTexture2DRHIRef positionRT = Position_RT->GameThread_GetRenderTargetResource()->GetRenderTargetTexture();
-	FTexture2DRHIRef normalRT = Normal_RT->GameThread_GetRenderTargetResource()->GetRenderTargetTexture();
-	FTexture2DRHIRef tangentRT = Tangent_RT->GameThread_GetRenderTargetResource()->GetRenderTargetTexture();
+	FTexture2DRHIRef positionRT = _Position_RT->GameThread_GetRenderTargetResource()->GetRenderTargetTexture();
+	FTexture2DRHIRef normalRT = _Normal_RT->GameThread_GetRenderTargetResource()->GetRenderTargetTexture();
+	FTexture2DRHIRef tangentRT = _Tangent_RT->GameThread_GetRenderTargetResource()->GetRenderTargetTexture();
 
 	FTexture2DRHIRef InAlbedoTex = AlbedoTex->GetResource()->TextureRHI->GetTexture2D();
 	
-	FTexture2DRHIRef testTextureRT = TestTexture->GameThread_GetRenderTargetResource()->GetRenderTargetTexture();
 
 
 	TArray<FTexture2DRHIRef> SGRT_Ref;
@@ -275,23 +356,42 @@ void ALightmapBaker::PathTracingInLightmap(UTextureRenderTarget2D* OutputRT,
 	{
 		SGRT_Ref[i] = OutSGRTs[i]->GameThread_GetRenderTargetResource()->GetRenderTargetTexture();
 	}
-	
+	if(mainLight == nullptr)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("NULL MAINLIGHT!"));
+		return;
+	}
 	ENQUEUE_RENDER_COMMAND(CaptureCommand)
 	(
 		[RenderTargetRHI,
 			positionRT, normalRT, tangentRT,
 			mainLight,
 			sampleCount, depth, seed,
-			testTextureRT, SGRT_Ref, InAlbedoTex, _MaxFallOff, _Roughness](FRHICommandListImmediate &RHICmdList)
+			SGRT_Ref, InAlbedoTex, _MaxFallOff, _Roughness](FRHICommandListImmediate &RHICmdList)
 		{
 			ComputePathTracing(
 				RHICmdList, RenderTargetRHI,
 				positionRT, normalRT, tangentRT,
-				mainLight, sampleCount, depth, seed, testTextureRT, ALightmapBaker::OutSGs, SGRT_Ref, InAlbedoTex, _MaxFallOff, _Roughness);
+				mainLight, sampleCount, depth, seed, ALightmapBaker::OutSGs, SGRT_Ref, InAlbedoTex, _MaxFallOff, _Roughness);
 		}
 	);
 }
 
+void ALightmapBaker::UseRDGDraw(const UObject* WorldContextObject, UTextureRenderTarget2D* Output_Position_RT, UTextureRenderTarget2D* Output_Normal_RT, UTextureRenderTarget2D* Output_Tangent_RT)
+{
+	check(IsInGameThread());
+	FTexture2DRHIRef positionRT = Output_Position_RT->GameThread_GetRenderTargetResource()->GetRenderTargetTexture();
+	FTexture2DRHIRef normalRT = Output_Normal_RT->GameThread_GetRenderTargetResource()->GetRenderTargetTexture();
+	FTexture2DRHIRef tangentRT = Output_Tangent_RT->GameThread_GetRenderTargetResource()->GetRenderTargetTexture();
+
+	ENQUEUE_RENDER_COMMAND(CaptureCommand)
+	(
+		[positionRT, normalRT, tangentRT](FRHICommandListImmediate &RHICmdList)
+		{
+			RDGDraw(RHICmdList, positionRT, normalRT, tangentRT);
+		}
+	);
+}
 
 
 
@@ -313,30 +413,24 @@ void ALightmapBaker::BeginPlay()
 	// }
 	
 
-	UMakeLightmapBlueprintLibrary::UseRDGDraw(nullptr, Position, Normal, Tangent);
+	UseRDGDraw(nullptr, Position_RT, Normal_RT, Tangent_RT);
 }
 
 // Called every frame
 void ALightmapBaker::Tick(float DeltaTime)
 {
+	if(!bEnableTickBake) return;
+	
 	Super::Tick(DeltaTime);
 
 	if(Frame < MaxBakeTime)
 	{
-		//USGPathTracing::PathTracingInLightmap(nullptr, RT1, Position, Normal, Tangent, MainLight, SampleCount, Depth, Frame, RT4);
-		//PathTracingInLightmap(RT1, Position, Normal, Tangent, MainLight, SampleCount, Depth, Frame, RT4, SGRTs);
-		PathTracingInLightmap(RT1, Position, Normal, Tangent, MainLight, SampleCount, Depth, Frame, RT4, SGRTs_Cur, MaxFallOff, Roughness);
+		GetMainLight(MainLight);
+		PathTracingInLightmap(PT_RT1, Position_RT, Normal_RT, Tangent_RT, MainLight, SampleCount, Depth, Frame, SGRTs_Cur, MaxFallOff, Roughness);
 
 		Dy_Blend->SetScalarParameterValue(FName("Fram"), Frame);
 		
-		// Dy_Blend->SetTextureParameterValue(FName("PreMap"), RT2);
-		// Dy_Blend->SetTextureParameterValue(FName("CurMap"), RT1);
-		// UKismetRenderingLibrary::DrawMaterialToRenderTarget(this, RT3, Dy_Blend);
-
-		// Dy_Copy->SetTextureParameterValue(FName("OriTex"), RT3);
-		// UKismetRenderingLibrary::DrawMaterialToRenderTarget(this, RT2, Dy_Copy);
-
-		BlendTexture(RT2, RT1, RT3);
+		BlendTexture(PT_RT2, PT_RT1, PT_RT3);
 
 		for(int i = 0; i < SG_NUM; i++)
 		{

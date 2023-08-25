@@ -12,7 +12,7 @@ void MainCS(uint3 ThreadId : SV_DispatchThreadID)
 
 	RWTexture2D<float4> SGTexes[SG_NUM] = {SG1, SG2, SG3, SG4, SG5, SG6, SG7, SG8, SG9, SG10, SG11, SG12};
 	
-	//TODO: 备选去黑边方案: 将烘焙的图利用洪水算法往外扩一个像素
+	//备选去黑边方案: 将烘焙的图利用洪水算法往外扩一个像素(效果不太好(?))
 	if(InPosition.Sample(InPositionSampler, uv).w <= 0.5)//空白像素不计算
 	{
 		OutTexture[ThreadId.xy] = float4(0.0, 0.0, 0.0, 1.0);
@@ -23,6 +23,7 @@ void MainCS(uint3 ThreadId : SV_DispatchThreadID)
 	float3 pos = InPosition.Sample(InPositionSampler, uv).xyz;//pos ws
 	float3 normal = InNormal.Sample(InNormalSampler, uv).xyz;//normal ws
 
+	//用于输出投射到SG的颜色强度
 	float3 dirColor[SG_NUM] = {float3(0,0,0),
 	float3(0,0,0),
 	float3(0,0,0),
@@ -35,8 +36,9 @@ void MainCS(uint3 ThreadId : SV_DispatchThreadID)
 	float3(0,0,0),
 	float3(0,0,0),
 	float3(0,0,0)};
-	float3 finalColor = 0;
-	float3 dirColor_1 = 0;
+	
+	float3 finalColor = 0;//总path tracing贴图
+	
 	for(int i = 0; i < SampleCount; i++)
 	{
 		float3 rayDir = GetRandomDir(normal, pos + i * normal, uv * i + seed);
@@ -50,7 +52,9 @@ void MainCS(uint3 ThreadId : SV_DispatchThreadID)
 			dirColor[j] += ProjectOntoSGs(rayDir, rayColor, SGBuffer[j], j);
 		}
 	}
+	
 	finalColor /= SampleCount;
+	
 	for(int j = 0; j <SG_NUM; j++)
 	{
 		dirColor[j] /= SampleCount;
@@ -58,8 +62,6 @@ void MainCS(uint3 ThreadId : SV_DispatchThreadID)
 
 	//输出
 	OutTexture[ThreadId.xy] = float4(finalColor, 1.0);//主纹理
-	//SG纹理
-	TestTexture[ThreadId.xy] = float4(dirColor_1, 1.0);
 	
 	SG1[ThreadId.xy] = float4(dirColor[0], 1.0);
 	SG2[ThreadId.xy] = float4(dirColor[1], 1.0);

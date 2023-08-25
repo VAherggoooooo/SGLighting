@@ -24,8 +24,7 @@ ABakePoint::ABakePoint()
 	StaticMeskComp->SetStaticMesh(Mesh);
 
 	UMaterialInterface* MeshMat = LoadObject<UMaterialInterface>(NULL, TEXT("/SGLighting/Material/Color_Inst.Color_Inst"), NULL, LOAD_None, NULL);
-	StaticMeskComp->SetMaterial(0, MeshMat);
-}
+	StaticMeskComp->SetMaterial(0, MeshMat);}
 
 
 void ABakePoint::OnConstruction(const FTransform& Transform)

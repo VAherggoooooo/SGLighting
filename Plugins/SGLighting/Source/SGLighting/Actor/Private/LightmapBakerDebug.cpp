@@ -5,6 +5,7 @@
 
 #include "Components/ArrowComponent.h"
 #include "Kismet/KismetMathLibrary.h"
+#include "SGLighting/System/Mesh/Public/BVHData.h"
 
 ALightmapBakerDebug::ALightmapBakerDebug()
 {

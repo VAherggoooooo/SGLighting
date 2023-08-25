@@ -49,10 +49,6 @@ float3 GetRandomDir(float3 normal, float3 pos, float2 uv)
 
 
 
-
-
-
-
 HitInfo GetHitInfo(float3 _pos, float3 _normal, float2 _uv, float3 _color, float _hitTime)
 {
 	HitInfo outInfo;
@@ -78,7 +74,7 @@ Ray GetRay(float3 _ori, float3 _dir, float2 _uv, float3 _curNormal)
 
 HitInfo HitChecke(Ray _ray)
 {
-	//TODO: 使用BVH加速结构
+	//TODO: 使用加速结构
 	HitInfo outInfo = GetHitInfo(_ray.ori, 0, _ray.uv, 0, RAY_MAXTIME + 5);
 	for(int i = 0; i < TriangleNum; i++)
 	{
@@ -141,7 +137,7 @@ HitInfo HitChecke(Ray _ray)
 
 float3 SampleSun(Ray _ray, FMainLight _Light)
 {
-	//TODO: 获得光照强度
+	//获得光照强度, 颜色
 	Ray toLight;
 	toLight.ori = _ray.ori;
 	toLight.dir = -_Light.LightDir;
@@ -160,7 +156,7 @@ float3 PathTracingShading(Ray _ray, int _depth, FMainLight _Light)
 	
 	if(_depth <= 0) return finalLight;
 	
-	for(uint i = 0; i < _depth; i++)//_depth
+	for(uint i = 0; i < _depth; i++)
 	{
 		HitInfo info = HitChecke(_ray);
 		if(info.didHit)
@@ -178,15 +174,13 @@ float3 PathTracingShading(Ray _ray, int _depth, FMainLight _Light)
 	
 			float3 sunLight = SampleSun(_ray, _Light);
 
-			rayColour *= saturate(dot(info.normal, newDir)) * info.color * 1.01; /// max(1, min(MaxFallOff, (info.hitTime * info.hitTime)));
+			rayColour *= saturate(dot(info.normal, newDir)) * info.color * 1.02;
 			if(max(rayColour.x, max(rayColour.y, rayColour.z)) < 0.01)
 			{
 				break;
 			}
 			
 			finalLight += rayColour * sunLight * PI / max(1, min(MaxFallOff, (info.hitTime * info.hitTime)));
-			//finalLight += SampleSun(_ray, _Light) * saturate(dot(fromDir, fromNor));//TODO: 看起来很对, 但还需验证(深井)
-			
 		}
 		else//TODO: 计算天光
 		{
@@ -211,41 +205,19 @@ FSG CopySG(FSG target)
 
 float3 ProjectOntoSGs(float3 dir, float3 color, FSG curSG, int id)
 {
-	// float3 sgdirs[12] = {
-	// 	float3(1,0,0),
-	// 	float3(0,1,0),
-	// 	float3(0,0,1),
-	// 	float3(-1,0,0),
-	// 	float3(0,-1,0),
-	// 	float3(0,0,-1),
-	// 	float3(0,0,0),
-	// 	float3(0,0,0),
-	// 	float3(0,0,0),
-	// 	float3(0,0,0),
-	// 	float3(0,0,0),
-	// 	float3(0,0,0)
-	// };
-	//curSG.Axis = sgdirs[id];
 	if(length(curSG.Axis) < 0.001) return 0;
 	
 	float3 outSGAmplitude = 0;
-	float3 outColor = 0;
 	if (dot(dir, curSG.Axis) > 0.0)
 	{
 		float dott = dot(curSG.Axis, dir);
-		float factor = (dott - 1.0) * curSG.Sharpness;//curSG.Sharpness 7.254528
+		float factor = (dott - 1.0) * curSG.Sharpness;// 7.254528
 		float wgt = exp(factor);
 		
 		float3 Amplitude = color * wgt;
 		outSGAmplitude += Amplitude;
-		//outColor += dott * color;
-		outColor += Amplitude;
 	}
-	// if(outColor.x <0 || outColor.y <0 || outColor.z < 0)
-	// {
-	// 	outColor = float3(1.0, 0.0, 0.0);
-	// }
-	return outColor;
+	return outSGAmplitude;
 }
 
 

@@ -184,10 +184,7 @@ void UBVHData::GetSectionFromStaticMesh(UStaticMesh* InMesh, int32 LODIndex, int
 				{
 					uint32 MeshVertIndex = Indices[i];
 
-					// See if we have this vert already in our section vert buffer, and copy vert in if not 
 					int32 SectionVertIndex = GetNewIndexForOldVertIndex(MeshVertIndex, MeshToSectionVertMap, LOD.VertexBuffers, _Vertices, _Normals, _UVs, _Tangents);
-
-					// Add to index buffer
 					_Triangles.Add(SectionVertIndex);
 				}
 			}

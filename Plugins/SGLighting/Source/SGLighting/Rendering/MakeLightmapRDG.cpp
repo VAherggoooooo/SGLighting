@@ -1,7 +1,5 @@
 #include "SGLighting/Rendering/MakeLightmapRDG.h"
 #include "DataDrivenShaderPlatformInfo.h"
-#include "Engine/TextureRenderTarget2D.h"
-
 #include "PipelineStateCache.h"
 
 #include "GlobalShader.h"
@@ -9,42 +7,10 @@
 #include "RenderGraphUtils.h"
 #include "RenderTargetPool.h"
 #include "RHIStaticStates.h"
-#include "ShaderParameterUtils.h"
 #include "PixelShaderUtils.h"
+#include "SGLighting/Actor/Public/LightmapBaker.h"
 
 
-void UMakeLightmapBlueprintLibrary::UseRDGComput(const UObject *WorldContextObject, UTextureRenderTarget2D *OutputRenderTarget)
-{
-	check(IsInGameThread());
-
-	FTexture2DRHIRef RenderTargetRHI = OutputRenderTarget->GameThread_GetRenderTargetResource()->GetRenderTargetTexture();
-
-	ENQUEUE_RENDER_COMMAND(CaptureCommand)
-	(
-		[RenderTargetRHI](FRHICommandListImmediate &RHICmdList)
-		{
-			RDGCompute(RHICmdList, RenderTargetRHI);
-		}
-	);
-}
-
-void UMakeLightmapBlueprintLibrary::UseRDGDraw(const UObject* WorldContextObject, UTextureRenderTarget2D* Output_Position_RT, UTextureRenderTarget2D* Output_Normal_RT, UTextureRenderTarget2D* Output_Tangent_RT)
-{
-	check(IsInGameThread());
-
-	//两张texture
-	FTexture2DRHIRef positionRT = Output_Position_RT->GameThread_GetRenderTargetResource()->GetRenderTargetTexture();
-	FTexture2DRHIRef normalRT = Output_Normal_RT->GameThread_GetRenderTargetResource()->GetRenderTargetTexture();
-	FTexture2DRHIRef tangentRT = Output_Tangent_RT->GameThread_GetRenderTargetResource()->GetRenderTargetTexture();
-
-	ENQUEUE_RENDER_COMMAND(CaptureCommand)
-	(
-		[positionRT, normalRT, tangentRT](FRHICommandListImmediate &RHICmdList)
-		{
-			RDGDraw(RHICmdList, positionRT, normalRT, tangentRT);
-		}
-	);
-}
 
 void ULightmapCollect::Init(UBVHData* _bvhData)
 {
@@ -55,23 +21,6 @@ void ULightmapCollect::Init(UBVHData* _bvhData)
 	this->BVHData = _bvhData;
 }
 
-void ULightmapCollect::UseRDGDraw(const UObject* WorldContextObject, UTextureRenderTarget2D* OutputRenderTarget, UTexture2D* InTexture, int32 Size)
-{
-	// check(IsInGameThread());
-	//
-	// //两张texture
-	// FTexture2DRHIRef RenderTargetRHI = OutputRenderTarget->GameThread_GetRenderTargetResource()->GetRenderTargetTexture();
-	// FTexture2DRHIRef InTextureRHI = InTexture->GetResource()->TextureRHI->GetTexture2D();
-	//
-	// ENQUEUE_RENDER_COMMAND(CaptureCommand)
-	// (
-	// 	[RenderTargetRHI, InTextureRHI, Size](FRHICommandListImmediate &RHICmdList)
-	// 	{
-	// 		RDGDraw(RHICmdList, RenderTargetRHI, InTextureRHI, Size);
-	// 	}
-	// );
-}
-
 
 TGlobalResource<FTextureVertexDeclaration> GTextureVertexDeclaration;
 TGlobalResource<FRectangleVertexBuffer> GRectangleVertexBuffer;
@@ -79,10 +28,7 @@ TGlobalResource<FRectangleIndexBuffer> GRectangleIndexBuffer;
 
 
 
-
 //绑定shader
-IMPLEMENT_GLOBAL_SHADER(FSGComputeShader, "/Plugins/SGLighting/Private/SimpleComputeShader.usf", "MainCS", SF_Compute);
-
 IMPLEMENT_GLOBAL_SHADER(FSGVertexShader, "/Plugins/SGLighting/Private/GenerateBakePointShader.usf", "MainVS", SF_Vertex);
 IMPLEMENT_GLOBAL_SHADER(FSGPixelPositionShader, "/Plugins/SGLighting/Private/GenerateBakePointShader.usf", "MainPS_Position", SF_Pixel);
 IMPLEMENT_GLOBAL_SHADER(FSGPixelNormalShader, "/Plugins/SGLighting/Private/GenerateBakePointShader.usf", "MainPS_Normal", SF_Pixel);
@@ -91,48 +37,7 @@ IMPLEMENT_GLOBAL_SHADER(FSGPixelTangentShader, "/Plugins/SGLighting/Private/Gene
 /*
  * Render Function 
  */
-void RDGCompute(FRHICommandListImmediate &RHIImmCmdList, FTexture2DRHIRef RenderTargetRHI)
-{
-	check(IsInRenderingThread());
 
-	//Create RenderTargetDesc
-	const FRDGTextureDesc& RenderTargetDesc = FRDGTextureDesc::Create2D(RenderTargetRHI->GetSizeXY(),RenderTargetRHI->GetFormat(), FClearValueBinding::Black, TexCreate_RenderTargetable | TexCreate_ShaderResource | TexCreate_UAV);
-	
-	TRefCountPtr<IPooledRenderTarget> PooledRenderTarget;
-
-	//RDG Begin
-	FRDGBuilder GraphBuilder(RHIImmCmdList);
-	FRDGTextureRef RDGRenderTarget = GraphBuilder.CreateTexture(RenderTargetDesc, TEXT("RDGRenderTarget"));
-	
-	FSGComputeShader::FParameters *Parameters = GraphBuilder.AllocParameters<FSGComputeShader::FParameters>();
-	FRDGTextureUAVDesc UAVDesc(RDGRenderTarget);
-	Parameters->OutTexture = GraphBuilder.CreateUAV(UAVDesc);
-
-	//Get ComputeShader From GlobalShaderMap
-	const ERHIFeatureLevel::Type FeatureLevel = GMaxRHIFeatureLevel; //ERHIFeatureLevel::SM5
-	FGlobalShaderMap *GlobalShaderMap = GetGlobalShaderMap(FeatureLevel);
-	TShaderMapRef<FSGComputeShader> ComputeShader(GlobalShaderMap);
-
-	//Compute Thread Group Count
-	FIntVector ThreadGroupCount(
-		RenderTargetRHI->GetSizeX() / 32,
-		RenderTargetRHI->GetSizeY() / 32,
-		1);
-
-	GraphBuilder.AddPass(
-		RDG_EVENT_NAME("RDGCompute"),
-		Parameters,
-		ERDGPassFlags::Compute,
-		[Parameters, ComputeShader, ThreadGroupCount](FRHICommandList &RHICmdList) {
-			FComputeShaderUtils::Dispatch(RHICmdList, ComputeShader, *Parameters, ThreadGroupCount);
-		});
-
-	GraphBuilder.QueueTextureExtraction(RDGRenderTarget, &PooledRenderTarget);
-	GraphBuilder.Execute();
-
-	//Copy Result To RenderTarget Asset
-	RHIImmCmdList.CopyTexture(PooledRenderTarget->GetRenderTargetItem().ShaderResourceTexture, RenderTargetRHI->GetTexture2D(), FRHICopyTextureInfo());
-}
 
 void RDGDraw(FRHICommandListImmediate &RHIImmCmdList, FTexture2DRHIRef PositonRHI, FTexture2DRHIRef NormalRHI, FTexture2DRHIRef TangentRHI)
 {
@@ -141,8 +46,6 @@ void RDGDraw(FRHICommandListImmediate &RHIImmCmdList, FTexture2DRHIRef PositonRH
 	GRectangleVertexBuffer.InitRHI();
 	GTextureVertexDeclaration.InitRHI();
 	GRectangleIndexBuffer.InitRHI();
-
-	//UE_LOG(LogTemp, Warning, TEXT("%d"), GRectangleVertexBuffer.VertexNum);
 
 	DrawToRT(RHIImmCmdList, PositonRHI, OutRTType::PositionWS);
 	DrawToRT(RHIImmCmdList, NormalRHI, OutRTType::NormalWS);

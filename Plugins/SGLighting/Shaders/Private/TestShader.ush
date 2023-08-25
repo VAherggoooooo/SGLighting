@@ -1,9 +1,0 @@
-#include "/Engine/Private/Common.ush"
-
-struct testStruct
-{
-	float3 testFunc()
-	{
-		return float3(1.0 ,0.0, 0.0);
-	}
-};

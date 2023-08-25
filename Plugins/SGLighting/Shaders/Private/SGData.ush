@@ -5,7 +5,7 @@
 
 
 
-#define RAY_MAXTIME 10000
+#define RAY_MAXTIME 10000 //暂时没啥用(?
 #define SG_NUM 12
 
 
@@ -58,7 +58,7 @@ struct Material
 
 struct FSG
 {
-	//TODO: 从cpp中传入sg结构buffer
+	//从cpp中传入sg结构buffer
 	//exp(2 * Sharpness * (dot(Axis, Direction) - 1.0f)) integrated over the sampling domain.
 	float3 Axis;
 	float3 Amplitude;
@@ -72,10 +72,7 @@ StructuredBuffer<FMeshTriangle> TriangleBuffer;
 StructuredBuffer<FMainLight> MainLightBuffer;
 StructuredBuffer<FSG> SGBuffer;
 
-
 RWTexture2D<float4> OutTexture;
-RWTexture2D<float4> TestTexture;
-
 
 RWTexture2D<float4> SG1;
 RWTexture2D<float4> SG2;
@@ -90,7 +87,6 @@ RWTexture2D<float4> SG10;
 RWTexture2D<float4> SG11;
 RWTexture2D<float4> SG12;
 
-
 Texture2D InPosition;
 Texture2D InNormal;
 Texture2D InTangent;
@@ -104,17 +100,11 @@ SamplerState AlbedoSampler;
 float3 MainLightDir;
 
 float seed;
-
 int TriangleNum;
 int depth;
 int SampleCount;
 float MaxFallOff;
-
 float Roughness;
-
-
-
-
 
 
 #endif
