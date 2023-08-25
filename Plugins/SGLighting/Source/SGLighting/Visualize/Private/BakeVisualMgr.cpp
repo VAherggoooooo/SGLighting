@@ -2,6 +2,8 @@
 
 #include "Components/InstancedStaticMeshComponent.h"
 #include "Kismet/GameplayStatics.h"
+#include "Kismet/KismetMathLibrary.h"
+#include "Kismet/KismetRenderingLibrary.h"
 
 
 ABakeVisualMgr::ABakeVisualMgr()
@@ -43,11 +45,31 @@ void ABakeVisualMgr::ShowBakePoints()
 		UE_LOG(LogTemp, Error, TEXT("No Lightmap Baker!"));
 		return;
 	}
-	
+
+	//绘制
 	LightmapBaker = static_cast<ALightmapBaker*>(Actors[0]);
 	LightmapBaker->UseRDGDraw(this, Position_RT, Normal_RT, Tangent_RT);
 
+	//读取
+	FRenderTarget* RenderTarget = Position_RT->GameThread_GetRenderTargetResource();
+	TArray<FFloat16Color> FloatColors;
+	RenderTarget->ReadFloat16Pixels(FloatColors);
+	TArray<FVector> Locations;
+	StaticMeskComp->ClearInstances();
+	for(int32 i = 0; i < FloatColors.Num(); i += 1)
+	{
+		FFloat16Color col = FloatColors[i];
+		if(col.A.GetFloat() > 0.0f)
+		{
+			Locations.Add(FVector(col.R.GetFloat(), col.G.GetFloat(), col.B.GetFloat()));
+		}
+	}
 	
+	//实例化
+	for(int32 i = 0; i < Locations.Num(); i += 1)
+	{
+		StaticMeskComp->AddInstance(UKismetMathLibrary::Conv_VectorToTransform(Locations[i]), true);
+	}
 }
 
 void ABakeVisualMgr::BeginPlay()

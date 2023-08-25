@@ -44,6 +44,9 @@ public:
 
 	ABakeVisualMgr();
 
+	/**
+	 * 可视化bake point 
+	 */
 	UFUNCTION(CallInEditor)
 	void ShowBakePoints();
 	
