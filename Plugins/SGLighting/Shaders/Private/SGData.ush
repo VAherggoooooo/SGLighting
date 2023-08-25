@@ -110,6 +110,8 @@ int depth;
 int SampleCount;
 float MaxFallOff;
 
+float Roughness;
+
 
 
 

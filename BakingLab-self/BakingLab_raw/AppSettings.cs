@@ -772,7 +772,7 @@ public class Settings
         [MinValue(0.01f)]
         [StepSize(0.01f)]
         [HelpText("Global scale applied to all material roughness values")]
-        float RoughnessScale = 2.0f;
+        float RoughnessScale = 0.3f;//2.0f;
 
         [MinValue(-1.0f)]
         [MaxValue(1.0f)]

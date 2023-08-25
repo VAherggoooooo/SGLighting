@@ -573,7 +573,7 @@ namespace AppSettings
         DiffuseAlbedoScale.Initialize(tweakBar, "DiffuseAlbedoScale", "Scene", "Diffuse Albedo Scale", "Global scale applied to all material diffuse albedo values", 0.5000f, 0.0000f, 340282300000000000000000000000000000000.0000f, 0.0100f, ConversionMode::None, 1.0000f);
         Settings.AddSetting(&DiffuseAlbedoScale);
 
-        RoughnessScale.Initialize(tweakBar, "RoughnessScale", "Scene", "Specular Roughness Scale", "Global scale applied to all material roughness values", 2.0000f, 0.0100f, 340282300000000000000000000000000000000.0000f, 0.0100f, ConversionMode::None, 1.0000f);
+        RoughnessScale.Initialize(tweakBar, "RoughnessScale", "Scene", "Specular Roughness Scale", "Global scale applied to all material roughness values", 0.3000f, 0.0100f, 340282300000000000000000000000000000000.0000f, 0.0100f, ConversionMode::None, 1.0000f);
         Settings.AddSetting(&RoughnessScale);
 
         MetallicOffset.Initialize(tweakBar, "MetallicOffset", "Scene", "Metallic Offset", "", 0.0000f, -1.0000f, 1.0000f, 0.0100f, ConversionMode::None, 1.0000f);

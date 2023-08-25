@@ -71,6 +71,7 @@ public:
 		SHADER_PARAMETER(int, depth)
 		SHADER_PARAMETER(float, seed)
 		SHADER_PARAMETER(float, MaxFallOff)
+		SHADER_PARAMETER(float, Roughness)
 
 		SHADER_PARAMETER_RDG_BUFFER_SRV(StructuredBuffer<FMainLight>, MainLightBuffer)
 		SHADER_PARAMETER_RDG_BUFFER_SRV(StructuredBuffer<FSG>, SGBuffer)

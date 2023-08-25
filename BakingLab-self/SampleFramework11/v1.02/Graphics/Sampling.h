@@ -132,6 +132,7 @@ inline Float3 SampleGGXMicrofacet(float roughness, float u1, float u2)
 }
 
 // Returns a world-space lighting direction for sampling a GGX distribution.
+// sampleDir = SampleDirectionGGX(v, normal, roughness, tangentToWorld, brdfSample.x, brdfSample.y);
 inline Float3 SampleDirectionGGX(const Float3& v, const Float3& n, float roughness,
                                  const Float3x3& tangentToWorld, float u1, float u2)
 {

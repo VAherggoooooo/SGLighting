@@ -44,7 +44,7 @@ void MainCS(uint3 ThreadId : SV_DispatchThreadID)
 		float3 rayColor = PathTracingShading(ray, depth, Light);
 		finalColor += rayColor;
 
-		//TODO: 投射到SG
+		//投射到SG
 		for(int j = 0; j <SG_NUM; j++)
 		{
 			dirColor[j] += ProjectOntoSGs(rayDir, rayColor, SGBuffer[j], j);
@@ -73,11 +73,6 @@ void MainCS(uint3 ThreadId : SV_DispatchThreadID)
 	SG10[ThreadId.xy] = float4(dirColor[9], 1.0);
 	SG11[ThreadId.xy] = float4(dirColor[10], 1.0);
 	SG12[ThreadId.xy] = float4(dirColor[11], 1.0);
-
-	// for(int i = 0; i < SG_NUM; i++)
-	// {
-	// 	SGTexes[i][ThreadId.xy] = float4(saturate(SGBuffer[i].Axis), 1.0);
-	// }
-
+	
 }
 
