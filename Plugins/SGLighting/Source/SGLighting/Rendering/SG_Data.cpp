@@ -21,12 +21,12 @@ void GenerateUniformSGs(int numSGs, TArray<FSG_Full>& outSGs)
         float r = sqrt(1.0f - y * y);
         float phi = k * inc;
         means[k] = FVector3f(FMathf::Cos(phi) * r, FMathf::Sin(phi) * r, y);
-    }//随机了12个方向, 某种算法
+    }//12个方向, 黄金分割算法 https://en.wikipedia.org/wiki/Golden_ratio
     
     for(int i = 0; i < N; ++i)
     {
         FSG_Full sample;
-        sample.Axis = means[i].GetSafeNormal();//仅仅给SG的dir赋值
+        sample.Axis = means[i].GetSafeNormal();//给SG的dir赋值
         outSGs[i] = sample;//添加到输出的SG
     }
 
@@ -40,7 +40,7 @@ void GenerateUniformSGs(int numSGs, TArray<FSG_Full>& outSGs)
     }
     float mdp = (minDP - 1.0f);
     float sharpness = (log(0.65f) * numSGs) / ((minDP - 1.0f) + 0.000001f);
-    //UE_LOG(LogTemp, Warning, TEXT("sharpness %f"), sharpness);
+
     for(int i = 0; i < numSGs; ++i)
         outSGs[i].Sharpness = sharpness;//赋值sharpness
 

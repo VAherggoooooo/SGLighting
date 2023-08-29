@@ -174,7 +174,7 @@ float3 PathTracingShading(Ray _ray, int _depth, FMainLight _Light)
 	
 			float3 sunLight = SampleSun(_ray, _Light);
 
-			rayColour *= saturate(dot(info.normal, newDir)) * info.color * 1.04;
+			rayColour *= saturate(dot(info.normal, newDir)) * info.color * 1.05;
 			if(max(rayColour.x, max(rayColour.y, rayColour.z)) < 0.01)
 			{
 				break;
